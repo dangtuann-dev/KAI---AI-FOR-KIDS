@@ -1,0 +1,140 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase';
+import { buildContextualPrompt } from '@/lib/prompts';
+import { checkInput, HARD_BLOCK_RESPONSE } from '@/lib/guardrails';
+import { groq, hasGroqKey, getMockChatResponse } from '@/lib/groq';
+
+export async function POST(request: NextRequest) {
+  try {
+    const { messages, sessionId, grade, subject, studentId, studentName } =
+      await request.json();
+
+    const lastUserMessage = messages[messages.length - 1]?.content || '';
+
+    // Guardrail check
+    const check = checkInput(lastUserMessage);
+    if (!check.safe && check.type === 'hard_block') {
+      // Log guardrail event
+      await logFeatureEvent(studentId, 'guardrail_triggered', { 
+        message: lastUserMessage.substring(0, 50),
+        subject,
+        grade
+      });
+      
+      const supabase = createClient();
+      await supabase.from('chat_messages').insert({
+        session_id: sessionId,
+        student_id: studentId,
+        role: 'assistant',
+        content: HARD_BLOCK_RESPONSE,
+        guardrail_flagged: true,
+      });
+
+      return NextResponse.json({ content: HARD_BLOCK_RESPONSE, flagged: true });
+    }
+
+    let content = '';
+    let tokensUsed = 0;
+
+    const systemPrompt = buildContextualPrompt(grade, subject, studentName);
+
+    if (hasGroqKey()) {
+      try {
+        const completion = await groq.chat.completions.create({
+          model: 'llama-3.1-8b-instant',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages.slice(-10), // Only keep the 10 most recent messages
+          ],
+          max_tokens: 300,
+          temperature: 0.7,
+        });
+
+        content = completion.choices[0].message.content || '';
+        tokensUsed = completion.usage?.total_tokens || 0;
+      } catch (err) {
+        console.error('Groq API error, falling back to mock response:', err);
+        content = getMockChatResponse(lastUserMessage, subject, grade, studentName);
+        tokensUsed = 50; // estimate
+      }
+    } else {
+      // Mock mode
+      content = getMockChatResponse(lastUserMessage, subject, grade, studentName);
+      tokensUsed = 40; // estimate
+    }
+
+    // Log user message to DB first (if it wasn't logged on frontend)
+    const supabase = createClient();
+    
+    // Check if the user message exists already in DB, otherwise insert it
+    const { data: existingMsg } = await supabase
+      .from('chat_messages')
+      .select('id')
+      .eq('session_id', sessionId)
+      .eq('content', lastUserMessage)
+      .eq('role', 'user')
+      .limit(1);
+
+    if (!existingMsg || existingMsg.length === 0) {
+      await supabase.from('chat_messages').insert({
+        session_id: sessionId,
+        student_id: studentId,
+        role: 'user',
+        content: lastUserMessage,
+        is_voice: messages[messages.length - 1]?.is_voice || false,
+        tokens_used: 10, // estimate
+      });
+    }
+
+    // Log AI response to DB
+    await supabase.from('chat_messages').insert({
+      session_id: sessionId,
+      student_id: studentId,
+      role: 'assistant',
+      content,
+      tokens_used: tokensUsed,
+    });
+
+    // Update session stats
+    const { data: sessionData } = await supabase
+      .from('chat_sessions')
+      .select('message_count, voice_message_count')
+      .eq('id', sessionId)
+      .single();
+
+    if (sessionData) {
+      const isVoice = messages[messages.length - 1]?.is_voice || false;
+      await supabase
+        .from('chat_sessions')
+        .update({
+          message_count: (sessionData.message_count || 0) + 2,
+          voice_message_count: isVoice 
+            ? (sessionData.voice_message_count || 0) + 1 
+            : (sessionData.voice_message_count || 0),
+          duration_seconds: 60 * ((sessionData.message_count || 0) + 2) // estimate 1 min per exchange
+        })
+        .eq('id', sessionId);
+    }
+
+    // Log feature event
+    await logFeatureEvent(studentId, 'ai_response', { subject, grade, tokens: tokensUsed });
+
+    return NextResponse.json({ content, flagged: false });
+  } catch (error) {
+    console.error('Chat error:', error);
+    return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
+  }
+}
+
+async function logFeatureEvent(userId: string, feature: string, metadata = {}) {
+  try {
+    const supabase = createClient();
+    await supabase.from('feature_events').insert({ 
+      user_id: userId, 
+      feature, 
+      metadata 
+    });
+  } catch (e) {
+    console.error('Error logging feature event:', e);
+  }
+}
