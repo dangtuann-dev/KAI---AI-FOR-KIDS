@@ -83,7 +83,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-md mx-auto">
+    <div className="flex flex-col gap-6 w-full max-w-none">
       
       {/* Title bar */}
       <div className="flex items-center justify-between">
@@ -113,34 +113,46 @@ export default function AdminDashboard() {
         />
       )}
 
-      {/* 3. Top popular student questions */}
-      {stats && stats.topQuestions && stats.topQuestions.length > 0 && (
-        <div className="p-4 bg-white border border-slate-100 rounded-3xl shadow-sm flex flex-col gap-3">
-          <div className="flex items-center gap-1.5">
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
-            <h3 className="font-extrabold text-slate-800 text-sm font-display">
-              Top 5 câu hỏi của Học sinh
-            </h3>
-          </div>
-          <div className="flex flex-col gap-2">
-            {stats.topQuestions.map((q: any, i: number) => (
-              <div key={i} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-600">
-                <span className="truncate pr-4 flex-1">💬 &ldquo;{q.text}&rdquo;</span>
-                <span className="bg-purple-100 text-purple-700 font-extrabold px-2 py-0.5 rounded-full text-[10px] shrink-0">
-                  {q.count} lần hỏi
-                </span>
+      {/* 3. Questions and Timeline Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 w-full items-start">
+        
+        {/* Top popular student questions */}
+        <div className="md:col-span-5 w-full">
+          {stats && stats.topQuestions && stats.topQuestions.length > 0 && (
+            <div className="p-4 bg-white border border-slate-100 rounded-3xl shadow-sm flex flex-col gap-3 w-full">
+              <div className="flex items-center gap-1.5">
+                <TrendingUp className="w-4 h-4 text-emerald-500" />
+                <h3 className="font-extrabold text-slate-800 text-sm font-display">
+                  Top 5 câu hỏi của Học sinh
+                </h3>
               </div>
-            ))}
-          </div>
+              <div className="flex flex-col gap-2">
+                {stats.topQuestions.map((q: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-600">
+                    <span className="truncate pr-4 flex-1">💬 &ldquo;{q.text}&rdquo;</span>
+                    <span className="bg-purple-100 text-purple-700 font-extrabold px-2 py-0.5 rounded-full text-[10px] shrink-0">
+                      {q.count} lần hỏi
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* 4. Actionable audit events logging */}
-      <ActivityTimeline events={recentEvents} />
+        {/* Actionable audit events logging */}
+        <div className="md:col-span-7 w-full">
+          <ActivityTimeline events={recentEvents} />
+        </div>
+
+      </div>
 
       {/* 5. User accounts listing, updating and disabling */}
-      <UserTable users={users} onUpdateUser={handleUpdateUser} />
+      <div className="w-full">
+        <UserTable users={users} onUpdateUser={handleUpdateUser} />
+      </div>
       
     </div>
   );
 }
+

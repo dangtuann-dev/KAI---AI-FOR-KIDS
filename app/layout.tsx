@@ -30,8 +30,8 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className="antialiased select-none overflow-x-hidden">
-        <div className="mx-auto min-h-screen max-w-md bg-[#F8F7FF] shadow-2xl relative flex flex-col border-x border-purple-100">
+      <body className="antialiased select-none overflow-x-hidden bg-slate-50 min-h-screen flex flex-col">
+        <div className="flex-1 flex flex-col w-full relative">
           {children}
         </div>
       </body>

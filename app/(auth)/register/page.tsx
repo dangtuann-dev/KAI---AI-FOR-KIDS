@@ -76,8 +76,9 @@ export default function RegisterPage() {
   const borderClass = isStudent ? 'border-purple-100 focus:border-purple-300' : 'border-rose-100 focus:border-rose-300';
 
   return (
-    <div className="flex-1 flex flex-col px-6 py-8 justify-center min-h-dvh">
-      {/* Mascot Header */}
+    <div className="flex-1 flex items-center justify-center min-h-dvh p-4 bg-[#F8F7FF]">
+      <div className="w-full max-w-md bg-white md:shadow-2xl md:rounded-3xl md:border md:border-purple-100 p-6 md:p-8 flex flex-col">
+        {/* Mascot Header */}
       <div className="flex flex-col items-center mb-6">
         <OwlAvatar
           state="idle"
@@ -242,5 +243,7 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+    </div>
   );
+
 }

@@ -129,8 +129,9 @@ function LoginContent() {
   const theme = getThemeClasses();
 
   return (
-    <div className="flex-1 flex flex-col px-6 py-8 justify-center min-h-dvh">
-      {/* Top Section - Mascot */}
+    <div className="flex-1 flex items-center justify-center min-h-dvh p-4 bg-[#F8F7FF]">
+      <div className="w-full max-w-md bg-white md:shadow-2xl md:rounded-3xl md:border md:border-purple-100 p-6 md:p-8 flex flex-col">
+        {/* Top Section - Mascot */}
       <div className="flex flex-col items-center mb-6">
         <OwlAvatar
           state={mascotState}
@@ -253,6 +254,7 @@ function LoginContent() {
           </Link>
         </p>
       </div>
+    </div>
     </div>
   );
 }

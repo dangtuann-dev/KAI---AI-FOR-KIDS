@@ -19,9 +19,9 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-dvh bg-slate-50 relative pb-10">
+    <div className="flex-1 flex flex-col min-h-dvh bg-slate-50 relative pb-10 max-w-6xl mx-auto w-full md:px-4">
       {/* Admin Header */}
-      <header className="h-14 px-4 bg-slate-800 text-white flex items-center justify-between shrink-0 shadow-md">
+      <header className="h-14 px-4 bg-slate-800 text-white flex items-center justify-between shrink-0 shadow-md md:rounded-b-2xl md:mt-2">
         <span className="text-sm font-extrabold font-display flex items-center gap-1.5 uppercase tracking-wider">
           <ShieldAlert className="w-5 h-5 text-amber-400" />
           <span>KAI ADMIN PANEL</span>

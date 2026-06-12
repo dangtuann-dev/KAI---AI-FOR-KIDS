@@ -66,69 +66,72 @@ export default function FeatureUsageChart({
   ];
 
   return (
-    <div className="flex flex-col gap-6 w-full">
-      {/* Subject Usage Bar Chart */}
-      <div className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="w-4 h-4 text-purple-600" />
-          <h3 className="font-bold text-slate-800 text-sm font-display">Phiên học theo Môn học</h3>
-        </div>
-        <div className="h-48 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={subjectData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-              <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-              <Tooltip cursor={{ fill: '#F1F5F9' }} />
-              <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                {subjectData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Grade Distribution Pie Chart */}
-      <div className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <PieChartIcon className="w-4 h-4 text-purple-600" />
-          <h3 className="font-bold text-slate-800 text-sm font-display">Phân bổ theo Lớp</h3>
-        </div>
-        <div className="h-48 w-full flex items-center justify-between">
-          <div className="w-[60%] h-full">
+    <div className="w-full flex flex-col gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        {/* Subject Usage Bar Chart */}
+        <div className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="w-4 h-4 text-purple-600" />
+            <h3 className="font-bold text-slate-800 text-sm font-display">Phiên học theo Môn học</h3>
+          </div>
+          <div className="h-48 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={activeGradeData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={35}
-                  outerRadius={55}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {activeGradeData.map((entry, index) => (
+              <BarChart data={subjectData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+                <Tooltip cursor={{ fill: '#F1F5F9' }} />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                  {subjectData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
-          {/* Legend */}
-          <div className="w-[40%] flex flex-col gap-1.5 pr-2">
-            {activeGradeData.map((entry, index) => (
-              <div key={index} className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.color }}></span>
-                <span className="text-[10px] font-bold text-slate-500">{entry.name} ({entry.value})</span>
-              </div>
-            ))}
+        </div>
+
+        {/* Grade Distribution Pie Chart */}
+        <div className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <PieChartIcon className="w-4 h-4 text-purple-600" />
+            <h3 className="font-bold text-slate-800 text-sm font-display">Phân bổ theo Lớp</h3>
+          </div>
+          <div className="h-48 w-full flex items-center justify-between">
+            <div className="w-[60%] h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={activeGradeData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={35}
+                    outerRadius={55}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {activeGradeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            {/* Legend */}
+            <div className="w-[40%] flex flex-col gap-1.5 pr-2">
+              {activeGradeData.map((entry, index) => (
+                <div key={index} className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.color }}></span>
+                  <span className="text-[10px] font-bold text-slate-500">{entry.name} ({entry.value})</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Guardrail Block Events Line Chart */}
+
       <div className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <ShieldAlert className="w-4 h-4 text-rose-500" />

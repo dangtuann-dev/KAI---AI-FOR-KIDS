@@ -265,110 +265,118 @@ export default function ParentDashboard() {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-md mx-auto">
+    <div className="w-full flex flex-col md:grid md:grid-cols-12 gap-6 items-start">
       
-      {/* Child account link management widget */}
-      <div className="p-4 bg-white border border-slate-100 rounded-3xl shadow-sm">
-        <h3 className="font-extrabold text-slate-800 text-sm font-display mb-3">
-          👨‍👩‍👧 Kết nối Tài khoản của Con
-        </h3>
+      {/* Left Column: Link Widget & Learning Report */}
+      <div className="w-full flex flex-col gap-6 md:col-span-5 lg:col-span-5">
+        
+        {/* Child account link management widget */}
+        <div className="p-4 bg-white border border-slate-100 rounded-3xl shadow-sm">
+          <h3 className="font-extrabold text-slate-800 text-sm font-display mb-3">
+            👨‍👩‍👧 Kết nối Tài khoản của Con
+          </h3>
 
-        {/* Child selector dropdown if parent has children */}
-        {children.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-bold text-slate-400">Chọn con xem báo cáo:</label>
-              <select
-                value={selectedChildId}
-                onChange={(e) => setSelectedChildId(e.target.value)}
-                className="flex-1 py-1.5 px-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold text-xs text-slate-700 cursor-pointer"
-              >
-                {children.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    Bé {c.full_name} (Lớp {c.grade})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {selectedChild && (
-              <div className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-1">
-                <span className="font-semibold text-slate-500">
-                  Email con: <b className="text-slate-700">{selectedChild.email}</b>
-                </span>
-                <button
-                  onClick={() => handleUnlinkChild(selectedChild.id)}
-                  className="text-rose-500 hover:text-rose-700 font-extrabold flex items-center gap-0.5 active:scale-95 transition-transform"
+          {/* Child selector dropdown if parent has children */}
+          {children.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-slate-400">Chọn con xem báo cáo:</label>
+                <select
+                  value={selectedChildId}
+                  onChange={(e) => setSelectedChildId(e.target.value)}
+                  className="flex-1 py-1.5 px-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold text-xs text-slate-700 cursor-pointer"
                 >
-                  <UserMinus className="w-3.5 h-3.5" /> Hủy kết nối
-                </button>
+                  {children.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      Bé {c.full_name} (Lớp {c.grade})
+                    </option>
+                  ))}
+                </select>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="p-4 bg-rose-50/20 border-2 border-dashed border-rose-100 rounded-2xl text-center text-xs text-slate-400 font-bold mb-4">
-            ⚠️ Bố mẹ chưa liên kết với tài khoản học sinh nào! Hãy nhập email đăng ký của con ở dưới để kết nối nhé.
-          </div>
-        )}
 
-        {/* Linking Form */}
-        <form onSubmit={handleLinkChild} className="mt-4 border-t border-slate-100 pt-4 flex flex-col gap-2">
-          <label className="text-[10px] font-bold text-slate-400 uppercase">
-            LIÊN KẾT THÊM TÀI KHOẢN CỦA CON
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="email"
-              placeholder="Nhập email đăng ký của con..."
-              value={linkEmail}
-              onChange={(e) => setLinkEmail(e.target.value)}
-              className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 focus:border-rose-300 rounded-xl outline-none text-xs font-bold text-slate-700 transition-colors"
-            />
-            <button
-              type="submit"
-              disabled={linking || !linkEmail}
-              className="px-3.5 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-xs shadow-sm transition-all active:scale-95 flex items-center gap-1 shrink-0 disabled:bg-slate-200"
-            >
-              {linking ? '...' : <UserPlus className="w-3.5 h-3.5" />} Kết nối
-            </button>
-          </div>
-          {linkError && <span className="text-[10px] text-rose-500 font-bold mt-1">⚠️ {linkError}</span>}
-          {linkSuccess && <span className="text-[10px] text-emerald-500 font-bold mt-1">✨ {linkSuccess}</span>}
-        </form>
-      </div>
+              {selectedChild && (
+                <div className="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-1">
+                  <span className="font-semibold text-slate-500">
+                    Email con: <b className="text-slate-700">{selectedChild.email}</b>
+                  </span>
+                  <button
+                    onClick={() => handleUnlinkChild(selectedChild.id)}
+                    className="text-rose-500 hover:text-rose-700 font-extrabold flex items-center gap-0.5 active:scale-95 transition-transform"
+                  >
+                    <UserMinus className="w-3.5 h-3.5" /> Hủy kết nối
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 bg-rose-50/20 border-2 border-dashed border-rose-100 rounded-2xl text-center text-xs text-slate-400 font-bold mb-4">
+              ⚠️ Bố mẹ chưa liên kết với tài khoản học sinh nào! Hãy nhập email đăng ký của con ở dưới để kết nối nhé.
+            </div>
+          )}
 
-      {/* Main Reports area */}
-      {selectedChildId ? (
-        <>
-          {/* 1. Learning analytics report */}
+          {/* Linking Form */}
+          <form onSubmit={handleLinkChild} className="mt-4 border-t border-slate-100 pt-4 flex flex-col gap-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase">
+              LIÊN KẾT THÊM TÀI KHOẢN CỦA CON
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                placeholder="Nhập email đăng ký của con..."
+                value={linkEmail}
+                onChange={(e) => setLinkEmail(e.target.value)}
+                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 focus:border-rose-300 rounded-xl outline-none text-xs font-bold text-slate-700 transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={linking || !linkEmail}
+                className="px-3.5 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-xs shadow-sm transition-all active:scale-95 flex items-center gap-1 shrink-0 disabled:bg-slate-200"
+              >
+                {linking ? '...' : <UserPlus className="w-3.5 h-3.5" />} Kết nối
+              </button>
+            </div>
+            {linkError && <span className="text-[10px] text-rose-500 font-bold mt-1">⚠️ {linkError}</span>}
+            {linkSuccess && <span className="text-[10px] text-emerald-500 font-bold mt-1">✨ {linkSuccess}</span>}
+          </form>
+        </div>
+
+        {selectedChildId && (
+          /* 1. Learning analytics report */
           <LearningReport
             studentName={selectedChild?.full_name || 'Học sinh'}
             grade={selectedChild?.grade || 3}
             stats={childStats}
             weeklyHistory={weeklyHistory}
           />
-          
-          {/* 2. Detailed chat histories viewing */}
+        )}
+      </div>
+
+      {/* Right Column: Chat History Viewer or Empty State */}
+      <div className="w-full md:col-span-7 lg:col-span-7 flex flex-col gap-6">
+        {selectedChildId ? (
+          /* 2. Detailed chat histories viewing */
           <div className="p-4 bg-white border border-slate-100 rounded-3xl shadow-sm">
             <ChatHistoryViewer
               sessions={chatSessions}
               onFetchSessionMessages={handleFetchMessages}
             />
           </div>
-        </>
-      ) : (
-        <div className="flex flex-col items-center justify-center p-8 bg-white border border-slate-100 rounded-3xl shadow-sm text-center text-slate-400 py-16 gap-3">
-          <Sparkles className="w-8 h-8 text-rose-300" />
-          <div>
-            <p className="font-display font-semibold text-sm text-slate-600 mb-1">
-              Chưa có dữ liệu học tập!
-            </p>
-            <p className="text-[11px] max-w-[240px]">
-              Vui lòng kết nối với tài khoản học sinh ở khung phía trên để bắt đầu theo dõi tiến độ của con.
-            </p>
+        ) : (
+          <div className="flex flex-col items-center justify-center p-8 bg-white border border-slate-100 rounded-3xl shadow-sm text-center text-slate-400 py-16 gap-3">
+            <Sparkles className="w-8 h-8 text-rose-300" />
+            <div>
+              <p className="font-display font-semibold text-sm text-slate-600 mb-1">
+                Chưa có dữ liệu học tập!
+              </p>
+              <p className="text-[11px] max-w-[240px]">
+                Vui lòng kết nối với tài khoản học sinh ở khung phía trên để bắt đầu theo dõi tiến độ của con.
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
     </div>
   );
 }
+

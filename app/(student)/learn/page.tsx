@@ -332,7 +332,7 @@ export default function LearnPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-dvh max-h-dvh relative select-none">
+    <div className="flex-1 flex flex-col w-full h-dvh max-h-dvh md:max-w-2xl md:mx-auto md:my-6 md:rounded-3xl md:shadow-2xl md:border md:border-purple-100 bg-white overflow-hidden relative select-none">
       
       {/* Mobile Top Header */}
       <header className="h-14 px-4 bg-white border-b border-purple-100 flex items-center justify-between shrink-0 shadow-sm z-10">
