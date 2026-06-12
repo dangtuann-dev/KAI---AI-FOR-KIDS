@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { groq, hasGroqKey, getMockTranscription } from '@/lib/groq';
+import { hasGroqKey, getMockTranscription } from '@/lib/groq';
 import Groq from 'groq-sdk';
 
 export async function POST(request: NextRequest) {
@@ -13,8 +13,11 @@ export async function POST(request: NextRequest) {
 
     if (hasGroqKey()) {
       try {
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
         const buffer = Buffer.from(await audioFile.arrayBuffer());
-        const file = await Groq.toFile(buffer, 'audio.wav', { type: 'audio/wav' });
+        const filename = audioFile.name || 'audio.webm';
+        const contentType = audioFile.type || 'audio/webm';
+        const file = await Groq.toFile(buffer, filename, { type: contentType });
 
         const transcription = await groq.audio.transcriptions.create({
           file: file,

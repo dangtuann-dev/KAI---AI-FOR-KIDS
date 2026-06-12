@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
 import { buildContextualPrompt } from '@/lib/prompts';
 import { checkInput, HARD_BLOCK_RESPONSE } from '@/lib/guardrails';
-import { groq, hasGroqKey, getMockChatResponse } from '@/lib/groq';
+import { hasGroqKey, getMockChatResponse } from '@/lib/groq';
+import Groq from 'groq-sdk';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
 
     if (hasGroqKey()) {
       try {
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
         const cleanedMessages = messages.slice(-10).map((msg: any) => ({
           role: msg.role === 'assistant' ? 'assistant' : 'user',
           content: msg.content,
