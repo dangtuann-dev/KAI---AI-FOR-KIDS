@@ -40,11 +40,16 @@ export async function POST(request: NextRequest) {
 
     if (hasGroqKey()) {
       try {
+        const cleanedMessages = messages.slice(-10).map((msg: any) => ({
+          role: msg.role === 'assistant' ? 'assistant' : 'user',
+          content: msg.content,
+        }));
+
         const completion = await groq.chat.completions.create({
           model: 'llama-3.1-8b-instant',
           messages: [
             { role: 'system', content: systemPrompt },
-            ...messages.slice(-10), // Only keep the 10 most recent messages
+            ...cleanedMessages,
           ],
           max_tokens: 300,
           temperature: 0.7,

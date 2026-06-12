@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { groq, hasGroqKey, getMockTranscription } from '@/lib/groq';
+import Groq from 'groq-sdk';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,8 +13,11 @@ export async function POST(request: NextRequest) {
 
     if (hasGroqKey()) {
       try {
+        const buffer = Buffer.from(await audioFile.arrayBuffer());
+        const file = await Groq.toFile(buffer, 'audio.wav', { type: 'audio/wav' });
+
         const transcription = await groq.audio.transcriptions.create({
-          file: audioFile,
+          file: file,
           model: 'whisper-large-v3-turbo',
           language: 'vi', // Vietnamese
           response_format: 'text',
