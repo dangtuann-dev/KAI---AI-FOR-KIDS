@@ -62,8 +62,8 @@ export async function speakText(
     }
     
     utterance.lang = 'vi-VN';
-    utterance.rate = 0.95; // Slightly slower and clearer speech for children
-    utterance.pitch = 1.1; // Slightly higher pitch for friendly owl mascot tone
+    utterance.rate = 1.15; // Energetic, fast-paced cartoon tone (avoiding sleepy rate)
+    utterance.pitch = 1.45; // High-pitched, cute cartoon character/mascot tone
     
     if (onStart) utterance.onstart = onStart;
     if (onEnd) utterance.onend = onEnd;
