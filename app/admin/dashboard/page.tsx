@@ -6,7 +6,7 @@ import StatsCard from '@/components/admin/StatsCard';
 import FeatureUsageChart from '@/components/admin/FeatureUsageChart';
 import UserTable from '@/components/admin/UserTable';
 import ActivityTimeline from '@/components/admin/ActivityTimeline';
-import { RefreshCw, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
+import { RefreshCw, ShieldAlert, Sparkles, TrendingUp, MessageSquare } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -128,8 +128,12 @@ export default function AdminDashboard() {
               </div>
               <div className="flex flex-col gap-2">
                 {stats.topQuestions.map((q: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-600">
-                    <span className="truncate pr-4 flex-1">💬 &ldquo;{q.text}&rdquo;</span>
+                  <div key={i} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-600 gap-2">
+                    <span className="truncate pr-4 flex-1 flex items-center gap-1.5">
+                      <MessageSquare className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                      &ldquo;{q.text}&rdquo;
+                    </span>
+
                     <span className="bg-purple-100 text-purple-700 font-extrabold px-2 py-0.5 rounded-full text-[10px] shrink-0">
                       {q.count} lần hỏi
                     </span>

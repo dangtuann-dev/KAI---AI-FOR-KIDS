@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
-import { User, Lock, CheckCircle, Save } from 'lucide-react';
+import { User, Lock, CheckCircle, Save, Settings, AlertCircle } from 'lucide-react';
 
 export default function ParentSettings() {
   const [profile, setProfile] = useState<any>(null);
@@ -78,17 +78,20 @@ export default function ParentSettings() {
   return (
     <div className="flex flex-col gap-6 w-full max-w-md mx-auto">
       <div className="p-5 bg-white border border-slate-100 rounded-3xl shadow-sm">
-        <h2 className="text-lg font-extrabold text-slate-800 font-display mb-4">
-          ⚙️ Cài đặt Tài khoản Phụ huynh
+        <h2 className="text-lg font-extrabold text-slate-800 font-display mb-4 flex items-center gap-1.5">
+          <Settings className="w-5 h-5 text-rose-500" />
+          Cài đặt Tài khoản Phụ huynh
         </h2>
 
         {profile ? (
           <form onSubmit={handleUpdateSettings} className="flex flex-col gap-4">
             {errorMsg && (
-              <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl text-xs font-bold text-rose-500 text-center">
-                ⚠️ {errorMsg}
+              <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl text-xs font-bold text-rose-500 text-center flex items-center justify-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                <span>{errorMsg}</span>
               </div>
             )}
+
             
             {successMsg && (
               <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-2xl text-xs font-bold text-emerald-600 text-center">

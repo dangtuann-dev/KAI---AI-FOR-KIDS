@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Flame, Award } from 'lucide-react';
+import { Flame, Award, Sparkles, Heart, Calculator, BookOpen } from 'lucide-react';
 
 interface ProgressBadgeProps {
   streakDays: number;
@@ -11,10 +11,10 @@ interface ProgressBadgeProps {
 export default function ProgressBadge({ streakDays, totalSessions = 0 }: ProgressBadgeProps) {
   // Define badges based on criteria
   const badgesList = [
-    { id: 'streak_3', name: 'Chăm Chỉ', emoji: '🌟', active: streakDays >= 3, desc: 'Học liên tiếp 3 ngày' },
-    { id: 'sessions_1', name: 'Người Bạn Mới', emoji: '🤝', active: totalSessions >= 1, desc: 'Có phiên học đầu tiên' },
-    { id: 'sessions_5', name: 'Vua Toán Học', emoji: '🔢', active: totalSessions >= 5, desc: 'Học 5 phiên học' },
-    { id: 'genius', name: 'Học Giả', emoji: '📚', active: totalSessions >= 8, desc: 'Học nhiều môn học' }
+    { id: 'streak_3', name: 'Chăm Chỉ', icon: <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-300" />, active: streakDays >= 3, desc: 'Học liên tiếp 3 ngày' },
+    { id: 'sessions_1', name: 'Người Bạn Mới', icon: <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-300" />, active: totalSessions >= 1, desc: 'Có phiên học đầu tiên' },
+    { id: 'sessions_5', name: 'Vua Toán Học', icon: <Calculator className="w-3.5 h-3.5 text-indigo-500" />, active: totalSessions >= 5, desc: 'Học 5 phiên học' },
+    { id: 'genius', name: 'Học Giả', icon: <BookOpen className="w-3.5 h-3.5 text-emerald-500" />, active: totalSessions >= 8, desc: 'Học nhiều môn học' }
   ];
 
   return (
@@ -40,15 +40,15 @@ export default function ProgressBadge({ streakDays, totalSessions = 0 }: Progres
           {badgesList.map((badge) => (
             <div
               key={badge.id}
-              className={`relative flex items-center justify-center w-7 h-7 rounded-full text-base border ${
+              className={`relative flex items-center justify-center w-7 h-7 rounded-full border ${
                 badge.active 
-                  ? 'bg-purple-100 border-purple-200 cursor-help scale-100' 
+                  ? 'bg-purple-50 border-purple-200 cursor-help scale-100' 
                   : 'bg-slate-100 border-slate-200 grayscale opacity-40 cursor-not-allowed scale-90'
               } transition-all duration-300`}
               title={badge.active ? `${badge.name}: ${badge.desc}` : `Chưa đạt: ${badge.desc}`}
             >
-              <span role="img" aria-label={badge.name}>
-                {badge.emoji}
+              <span className="flex items-center justify-center shrink-0">
+                {badge.icon}
               </span>
               {badge.active && (
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border border-white rounded-full"></span>
@@ -60,3 +60,4 @@ export default function ProgressBadge({ streakDays, totalSessions = 0 }: Progres
     </div>
   );
 }
+

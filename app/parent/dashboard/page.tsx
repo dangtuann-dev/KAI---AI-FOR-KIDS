@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import LearningReport from '@/components/parent/LearningReport';
 import ChatHistoryViewer from '@/components/parent/ChatHistoryViewer';
-import { UserPlus, UserMinus, Sparkles } from 'lucide-react';
+import { UserPlus, UserMinus, Sparkles, Users, AlertTriangle, AlertCircle } from 'lucide-react';
 
 export default function ParentDashboard() {
   const [parent, setParent] = useState<any>(null);
@@ -272,8 +272,9 @@ export default function ParentDashboard() {
         
         {/* Child account link management widget */}
         <div className="p-4 bg-white border border-slate-100 rounded-3xl shadow-sm">
-          <h3 className="font-extrabold text-slate-800 text-sm font-display mb-3">
-            👨‍👩‍👧 Kết nối Tài khoản của Con
+          <h3 className="font-extrabold text-slate-800 text-sm font-display mb-3 flex items-center gap-1.5">
+            <Users className="w-4 h-4 text-rose-500" />
+            Kết nối Tài khoản của Con
           </h3>
 
           {/* Child selector dropdown if parent has children */}
@@ -309,8 +310,9 @@ export default function ParentDashboard() {
               )}
             </div>
           ) : (
-            <div className="p-4 bg-rose-50/20 border-2 border-dashed border-rose-100 rounded-2xl text-center text-xs text-slate-400 font-bold mb-4">
-              ⚠️ Bố mẹ chưa liên kết với tài khoản học sinh nào! Hãy nhập email đăng ký của con ở dưới để kết nối nhé.
+            <div className="p-4 bg-rose-50/20 border-2 border-dashed border-rose-100 rounded-2xl text-center text-xs text-slate-400 font-bold mb-4 flex items-center justify-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+              <span>Bố mẹ chưa liên kết với tài khoản học sinh nào! Hãy nhập email đăng ký của con ở dưới để kết nối nhé.</span>
             </div>
           )}
 
@@ -335,8 +337,16 @@ export default function ParentDashboard() {
                 {linking ? '...' : <UserPlus className="w-3.5 h-3.5" />} Kết nối
               </button>
             </div>
-            {linkError && <span className="text-[10px] text-rose-500 font-bold mt-1">⚠️ {linkError}</span>}
-            {linkSuccess && <span className="text-[10px] text-emerald-500 font-bold mt-1">✨ {linkSuccess}</span>}
+            {linkError && (
+              <span className="text-[10px] text-rose-500 font-bold mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" /> {linkError}
+              </span>
+            )}
+            {linkSuccess && (
+              <span className="text-[10px] text-emerald-500 font-bold mt-1 flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5" /> {linkSuccess}
+              </span>
+            )}
           </form>
         </div>
 
