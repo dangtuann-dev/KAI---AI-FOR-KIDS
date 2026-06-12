@@ -138,7 +138,7 @@ export default function UserTable({ users, onUpdateUser }: UserTableProps) {
       </div>
 
       {/* User Table / List on Mobile */}
-      <div className="overflow-x-auto mt-2 custom-scrollbar">
+      <div className="lg:hidden mt-2">
         <div className="flex flex-col gap-3 max-h-[380px] overflow-y-auto pr-1">
           {filteredUsers.length === 0 ? (
             <div className="text-center py-12 text-slate-400 font-bold text-xs">
@@ -271,6 +271,139 @@ export default function UserTable({ users, onUpdateUser }: UserTableProps) {
             })
           )}
         </div>
+      </div>
+
+      {/* User Table on Desktop */}
+      <div className="hidden lg:block mt-2 overflow-x-auto">
+        {filteredUsers.length === 0 ? (
+          <div className="text-center py-12 text-slate-400 font-bold text-xs">
+            Không tìm thấy người dùng phù hợp.
+          </div>
+        ) : (
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="text-left text-xs text-slate-400 font-extrabold uppercase tracking-wider border-b border-slate-100">
+                <th className="pb-3 pl-2">Thành viên</th>
+                <th className="pb-3">Email</th>
+                <th className="pb-3">Vai trò</th>
+                <th className="pb-3">Khối lớp</th>
+                <th className="pb-3">Ngày tham gia</th>
+                <th className="pb-3 text-right pr-4">Hành động</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filteredUsers.map((user) => {
+                const isEditing = editingUserId === user.id;
+                
+                if (isEditing) {
+                  return (
+                    <tr key={user.id} className="bg-purple-50/10">
+                      <td className="py-3 pl-2">
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="px-2.5 py-1.5 border-2 border-purple-100 rounded-xl outline-none font-bold text-xs text-slate-700 w-full max-w-[180px]"
+                        />
+                      </td>
+                      <td className="py-3 text-xs text-slate-400 font-medium">{user.email}</td>
+                      <td className="py-3">
+                        <select
+                          value={editRole}
+                          onChange={(e) => setEditRole(e.target.value as any)}
+                          className="px-2.5 py-1.5 border-2 border-purple-100 rounded-xl outline-none font-bold text-xs text-slate-600 bg-white"
+                        >
+                          <option value="student">Học sinh</option>
+                          <option value="parent">Phụ huynh</option>
+                          <option value="admin">Quản trị</option>
+                        </select>
+                      </td>
+                      <td className="py-3">
+                        {editRole === 'student' ? (
+                          <select
+                            value={editGrade}
+                            onChange={(e) => setEditGrade(Number(e.target.value))}
+                            className="px-2.5 py-1.5 border-2 border-purple-100 rounded-xl outline-none font-bold text-xs text-slate-600 bg-white"
+                          >
+                            <option value={1}>Lớp 1</option>
+                            <option value={2}>Lớp 2</option>
+                            <option value={3}>Lớp 3</option>
+                            <option value={4}>Lớp 4</option>
+                            <option value={5}>Lớp 5</option>
+                          </select>
+                        ) : (
+                          <span className="text-xs text-slate-400 font-bold">—</span>
+                        )}
+                      </td>
+                      <td className="py-3 text-xs text-slate-500 font-medium">
+                        {new Date(user.created_at).toLocaleDateString('vi-VN')}
+                      </td>
+                      <td className="py-3 text-right pr-4">
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={cancelEdit}
+                            className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-lg transition-all active:scale-95"
+                            title="Hủy"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => saveEdit(user.id)}
+                            disabled={isSaving}
+                            className="p-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-all active:scale-95"
+                            title="Lưu"
+                          >
+                            {isSaving ? '...' : <Check className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+
+                return (
+                  <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-3 pl-2 flex items-center gap-3">
+                      <img
+                        src={user.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.id}`}
+                        alt={user.full_name}
+                        className="w-8 h-8 rounded-full border border-purple-100 bg-purple-50 shrink-0"
+                      />
+                      <span className="font-extrabold text-slate-800 font-display text-sm">
+                        {user.full_name || 'Chưa đặt tên'}
+                      </span>
+                    </td>
+                    <td className="py-3 text-xs text-slate-500 font-medium">{user.email}</td>
+                    <td className="py-3">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                        user.role === 'admin' ? 'bg-amber-100 text-amber-700' :
+                        user.role === 'parent' ? 'bg-pink-100 text-pink-700' :
+                        'bg-purple-100 text-purple-700'
+                      }`}>
+                        {user.role === 'admin' ? 'Admin' : user.role === 'parent' ? 'Phụ huynh' : 'Học sinh'}
+                      </span>
+                    </td>
+                    <td className="py-3 text-xs font-bold text-slate-600">
+                      {user.role === 'student' ? `Lớp ${user.studentInfo?.grade || 3}` : '—'}
+                    </td>
+                    <td className="py-3 text-xs text-slate-500 font-medium">
+                      {new Date(user.created_at).toLocaleDateString('vi-VN')}
+                    </td>
+                    <td className="py-3 text-right pr-4">
+                      <button
+                        onClick={() => startEdit(user)}
+                        className="p-1.5 hover:bg-purple-50 text-slate-400 hover:text-purple-600 rounded-lg transition-colors active:scale-90"
+                        title="Chỉnh sửa"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

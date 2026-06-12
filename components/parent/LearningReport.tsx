@@ -48,8 +48,8 @@ export default function LearningReport({
         <p className="text-sm opacity-90 font-medium">Học sinh Lớp {grade} • Đang kết nối tài khoản</p>
       </div>
 
-      {/* 2x2 Metrics Cards */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Responsive Metrics Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 gap-4">
         {/* Today Sessions */}
         <div className="p-4 bg-white border border-purple-100 rounded-2xl shadow-sm flex flex-col">
           <div className="flex items-center justify-between text-slate-400 mb-2">

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut, Send, Keyboard, Mic, WifiOff, RefreshCw } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
-import SubjectSelector from '@/components/kid/SubjectSelector';
+import SubjectSelector, { SUBJECTS } from '@/components/kid/SubjectSelector';
 import GradeSelector from '@/components/kid/GradeSelector';
 import ProgressBadge from '@/components/kid/ProgressBadge';
 import ChatHistory from '@/components/chat/ChatHistory';
@@ -42,8 +42,17 @@ export default function LearnPage() {
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'error' | 'warning' | 'success' } | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [showTextInput, setShowTextInput] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   
   const currentAudioRef = useRef<HTMLAudioElement | SpeechSynthesisUtterance | null>(null);
+
+  // Monitor screen size for responsive layouts
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // Trigger custom toast notification
   const showToast = (text: string, type: 'error' | 'warning' | 'success' = 'error') => {
@@ -332,124 +341,198 @@ export default function LearnPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col w-full h-dvh max-h-dvh md:max-w-2xl md:mx-auto md:my-6 md:rounded-3xl md:shadow-2xl md:border md:border-purple-100 bg-white overflow-hidden relative select-none">
+    <div className="flex-1 flex flex-col lg:flex-row w-full h-dvh max-h-dvh bg-white overflow-hidden relative select-none">
       
-      {/* Mobile Top Header */}
-      <header className="h-14 px-4 bg-white border-b border-purple-100 flex items-center justify-between shrink-0 shadow-sm z-10">
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-1 text-slate-500 hover:text-purple-600 font-extrabold text-xs bg-slate-50 hover:bg-purple-50 px-3 py-1.5 rounded-full transition-all active:scale-95 border border-slate-100"
-          title="Thoát tài khoản"
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          <span className="font-display">Thoát</span>
-        </button>
+      {/* Sidebar for Desktop only (lg and larger) */}
+      <aside className="hidden lg:flex lg:flex-col lg:w-80 border-r border-slate-100 bg-white p-6 gap-6 shrink-0 h-full relative overflow-y-auto custom-scrollbar">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="font-display font-black text-xl tracking-wider text-[#6C63FF]">KAI LEARNING</span>
+        </div>
 
-        <span className="text-xl font-extrabold text-purple-600 tracking-wider font-display flex items-center gap-1.5">
-          <span>KAI AI</span>
-          {isOffline && <WifiOff className="w-4 h-4 text-rose-500 animate-pulse" />}
-        </span>
-
-        <GradeSelector
-          selectedGrade={selectedGrade}
-          onSelectGrade={setSelectedGrade}
-        />
-      </header>
-
-      {/* Horizontal Subject Bar */}
-      <div className="bg-white shrink-0 border-b border-purple-50">
-        <SubjectSelector
-          selectedId={selectedSubject}
-          onSelectSubject={setSelectedSubject}
-        />
-      </div>
-
-      {/* Gamified Streak & Badge Banner */}
-      <div className="p-3 bg-slate-50/50 shrink-0">
-        <ProgressBadge
-          streakDays={studentProfile?.streak_days || 0}
-          totalSessions={studentProfile?.total_sessions || 0}
-        />
-      </div>
-
-      {/* Hero Mascot Section */}
-      <div className="bg-white border-b border-purple-50 shrink-0 py-1.5 flex justify-center shadow-inner">
-        <OwlAvatar
-          state={voiceState === 'playing' ? 'speaking' : voiceState === 'recording' ? 'listening' : 'idle'}
-          text={mascotText}
-        />
-      </div>
-
-      {/* Chat Messages */}
-      <div className="flex-1 bg-slate-50/20 overflow-hidden relative">
-        <ChatHistory
-          messages={messages}
-          isTyping={isTyping}
-          onSpeakStart={() => setVoiceState('playing')}
-          onSpeakEnd={() => setVoiceState('idle')}
-        />
-      </div>
-
-      {/* Custom alert toast */}
-      {toastMsg && (
-        <div className="absolute top-44 left-1/2 -translate-x-1/2 w-[90%] z-50 animate-bounce">
-          <div className={`p-4 border-2 rounded-2xl text-xs font-bold text-center shadow-lg ${
-            toastMsg.type === 'error' ? 'bg-rose-50 border-rose-100 text-rose-600' :
-            toastMsg.type === 'warning' ? 'bg-amber-50 border-amber-100 text-amber-600' :
-            'bg-emerald-50 border-emerald-100 text-emerald-600'
-          }`}>
-            {toastMsg.text}
+        <div className="text-center bg-slate-50 border border-slate-100 rounded-3xl p-4 flex flex-col items-center">
+          <OwlAvatar
+            size="lg"
+            state={voiceState === 'playing' ? 'speaking' : voiceState === 'recording' ? 'listening' : 'idle'}
+            text={mascotText}
+          />
+          <h3 className="font-display text-lg font-black text-slate-800 mt-2">
+            Chào {studentProfile?.full_name || 'Bé'}! 👋
+          </h3>
+          
+          <div className="mt-3 w-full">
+            <GradeSelector
+              selectedGrade={selectedGrade}
+              onSelectGrade={setSelectedGrade}
+            />
           </div>
         </div>
-      )}
 
-      {/* Bottom Input Area */}
-      <footer className="bg-white border-t border-purple-100 p-4 shrink-0 flex items-center justify-between gap-3 shadow-md">
-        
-        {/* Toggle input method button */}
-        <button
-          onClick={() => setShowTextInput(!showTextInput)}
-          className={`p-3 border-2 rounded-full transition-all active:scale-90 ${
-            showTextInput 
-              ? 'bg-purple-100 border-purple-200 text-purple-600' 
-              : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-purple-600'
-          }`}
-          title={showTextInput ? 'Nói chuyện bằng giọng nói' : 'Nhập tin nhắn bằng chữ'}
-        >
-          {showTextInput ? <Mic className="w-5 h-5" /> : <Keyboard className="w-5 h-5" />}
-        </button>
+        <div className="flex flex-col gap-2">
+          <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider pl-1">
+            Chọn môn học
+          </p>
+          <div className="flex flex-col gap-2">
+            {SUBJECTS.map((s) => {
+              const isActive = s.id === selectedSubject;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setSelectedSubject(s.id)}
+                  className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all font-bold font-display text-sm active:scale-95 ${
+                    isActive
+                      ? `${s.color} border-current shadow-md ${s.textColor}`
+                      : 'border-transparent bg-slate-50/50 hover:bg-slate-50 text-slate-600'
+                  }`}
+                >
+                  <span className="text-lg flex items-center justify-center shrink-0">
+                    {s.icon}
+                  </span>
+                  <span>{s.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-        {showTextInput ? (
-          /* Text input interface */
-          <form onSubmit={handleSendText} className="flex-1 flex gap-2">
-            <input
-              type="text"
-              placeholder="Hỏi KAI bài tập của bé..."
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              className="flex-1 px-4 py-3 bg-slate-50 border-2 border-purple-50 hover:border-purple-100 focus:border-purple-300 rounded-2xl outline-none font-bold text-sm text-slate-700 transition-colors"
-            />
-            <button
-              type="submit"
-              disabled={!textInput.trim() || isTyping}
-              className="p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full transition-all active:scale-95 shadow-md disabled:bg-slate-200 disabled:shadow-none"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </form>
-        ) : (
-          /* Voice-first holding interface */
-          <div className="flex-1 flex justify-center pr-8">
-            <VoiceButton
-              state={voiceState}
-              onChangeState={setVoiceState}
-              onTranscript={handleVoiceTranscript}
-              onResponse={(txt) => getAIResponse(txt, true)}
-              onError={(err) => showToast(err, 'error')}
+        <div className="mt-auto">
+          <ProgressBadge
+            streakDays={studentProfile?.streak_days || 0}
+            totalSessions={studentProfile?.total_sessions || 0}
+          />
+          
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center gap-2 w-full mt-4 py-3 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-extrabold text-xs rounded-2xl transition-all active:scale-[0.98]"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Thoát tài khoản</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main chat column */}
+      <main className="flex-1 flex flex-col h-full bg-slate-50/50 min-w-0">
+        {/* Mobile Header (Hidden on Desktop) */}
+        <header className="h-14 px-4 bg-white border-b border-purple-100 flex items-center justify-between shrink-0 shadow-sm z-10 lg:hidden">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 text-slate-500 hover:text-purple-600 font-extrabold text-xs bg-slate-50 hover:bg-purple-50 px-3 py-1.5 rounded-full transition-all active:scale-95 border border-slate-100"
+            title="Thoát tài khoản"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="font-display">Thoát</span>
+          </button>
+
+          <span className="text-xl font-extrabold text-purple-600 tracking-wider font-display flex items-center gap-1.5">
+            <span>KAI AI</span>
+            {isOffline && <WifiOff className="w-4 h-4 text-rose-500 animate-pulse" />}
+          </span>
+
+          <GradeSelector
+            selectedGrade={selectedGrade}
+            onSelectGrade={setSelectedGrade}
+          />
+        </header>
+
+        {/* Mobile Horizontal Subject Bar (Hidden on Desktop) */}
+        <div className="bg-white shrink-0 border-b border-purple-50 lg:hidden">
+          <SubjectSelector
+            selectedId={selectedSubject}
+            onSelectSubject={setSelectedSubject}
+          />
+        </div>
+
+        {/* Mobile Gamified Streak & Badge Banner (Hidden on Desktop) */}
+        <div className="p-3 bg-slate-50/50 shrink-0 lg:hidden">
+          <ProgressBadge
+            streakDays={studentProfile?.streak_days || 0}
+            totalSessions={studentProfile?.total_sessions || 0}
+          />
+        </div>
+
+        {/* Mobile Hero Mascot Section (Hidden on Desktop) */}
+        <div className="bg-white border-b border-purple-50 shrink-0 py-1.5 flex justify-center shadow-inner lg:hidden">
+          <OwlAvatar
+            state={voiceState === 'playing' ? 'speaking' : voiceState === 'recording' ? 'listening' : 'idle'}
+            text={mascotText}
+          />
+        </div>
+
+        {/* Chat Messages - centered with max-width on desktop */}
+        <div className="flex-1 overflow-hidden relative w-full flex justify-center">
+          <div className="w-full max-w-[720px] h-full">
+            <ChatHistory
+              messages={messages}
+              isTyping={isTyping}
+              onSpeakStart={() => setVoiceState('playing')}
+              onSpeakEnd={() => setVoiceState('idle')}
             />
           </div>
+        </div>
+
+        {/* Custom alert toast */}
+        {toastMsg && (
+          <div className="absolute top-44 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] z-50 animate-bounce">
+            <div className={`p-4 border-2 rounded-2xl text-xs font-bold text-center shadow-lg ${
+              toastMsg.type === 'error' ? 'bg-rose-50 border-rose-100 text-rose-600' :
+              toastMsg.type === 'warning' ? 'bg-amber-50 border-amber-100 text-amber-600' :
+              'bg-emerald-50 border-emerald-100 text-emerald-600'
+            }`}>
+              {toastMsg.text}
+            </div>
+          </div>
         )}
-      </footer>
+
+        {/* Bottom Input Area */}
+        <footer className="bg-white border-t border-purple-100 p-4 shrink-0 shadow-md flex justify-center w-full">
+          <div className="w-full max-w-[720px] flex items-center justify-between gap-3">
+            {/* Toggle input method button */}
+            <button
+              onClick={() => setShowTextInput(!showTextInput)}
+              className={`p-3 border-2 rounded-full transition-all active:scale-90 ${
+                showTextInput 
+                  ? 'bg-purple-100 border-purple-200 text-purple-600' 
+                  : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-purple-600'
+              }`}
+              title={showTextInput ? 'Nói chuyện bằng giọng nói' : 'Nhập tin nhắn bằng chữ'}
+            >
+              {showTextInput ? <Mic className="w-5 h-5" /> : <Keyboard className="w-5 h-5" />}
+            </button>
+
+            {showTextInput ? (
+              /* Text input interface */
+              <form onSubmit={handleSendText} className="flex-1 flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Hỏi KAI bài tập của bé..."
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  className="flex-1 px-4 py-3 bg-slate-50 border-2 border-purple-50 hover:border-purple-100 focus:border-purple-300 rounded-2xl outline-none font-bold text-sm text-slate-700 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={!textInput.trim() || isTyping}
+                  className="p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full transition-all active:scale-95 shadow-md disabled:bg-slate-200 disabled:shadow-none"
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              </form>
+            ) : (
+              /* Voice-first holding interface */
+              <div className="flex-1 flex justify-center">
+                <VoiceButton
+                  state={voiceState}
+                  onChangeState={setVoiceState}
+                  onTranscript={handleVoiceTranscript}
+                  onResponse={(txt) => getAIResponse(txt, true)}
+                  onError={(err) => showToast(err, 'error')}
+                  size={isDesktop ? 'lg' : 'md'}
+                />
+              </div>
+            )}
+          </div>
+        </footer>
+      </main>
     </div>
   );
 }

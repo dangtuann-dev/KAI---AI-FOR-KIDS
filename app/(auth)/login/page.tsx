@@ -129,132 +129,152 @@ function LoginContent() {
   const theme = getThemeClasses();
 
   return (
-    <div className="flex-1 flex items-center justify-center min-h-dvh p-4 bg-[#F8F7FF]">
-      <div className="w-full max-w-md bg-white md:shadow-2xl md:rounded-3xl md:border md:border-purple-100 p-6 md:p-8 flex flex-col">
-        {/* Top Section - Mascot */}
-      <div className="flex flex-col items-center mb-6">
-        <OwlAvatar
-          state={mascotState}
-          text={
-            role === 'student'
-              ? 'Chào bé! Đăng nhập để học cùng KAI nhé! 🦉'
-              : role === 'parent'
-              ? 'Chào Phụ huynh! Xem báo cáo học tập của con.'
-              : 'Trang Quản lý hệ thống KAI Learning.'
-          }
-        />
-        <h1 className="text-3xl font-extrabold text-slate-800 font-display mt-2">
-          KAI LEARNING
-        </h1>
-        <p className="text-xs text-slate-400 font-bold tracking-widest uppercase mt-0.5">
-          Prototype v1.0
-        </p>
+    <div className="min-h-dvh flex flex-col lg:flex-row bg-[#F8F7FF]">
+      {/* Left Column - Desktop only */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#6C63FF] to-[#8B5CF6] items-center justify-center p-12">
+        <div className="text-center text-white max-w-md">
+          <OwlAvatar size="xl" state="idle" />
+          <h2 className="font-display text-4xl font-black mt-6 tracking-wide">
+            Học vui mỗi ngày cùng KAI!
+          </h2>
+          <p className="mt-3 opacity-90 text-lg font-medium">
+            Người bạn đồng hành thông minh cho bé tiểu học
+          </p>
+        </div>
       </div>
 
-      {/* Role Selector */}
-      <div className="flex p-1.5 bg-slate-100 rounded-2xl mb-6 shadow-inner gap-1">
-        <button
-          onClick={() => setRole('student')}
-          className={`flex-1 py-2 rounded-xl text-xs font-extrabold font-display transition-all ${
-            role === 'student' ? theme.pillActive : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          🎒 Học sinh
-        </button>
-        <button
-          onClick={() => setRole('parent')}
-          className={`flex-1 py-2 rounded-xl text-xs font-extrabold font-display transition-all ${
-            role === 'parent' ? theme.pillActive : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          👨‍👩‍👧 Phụ huynh
-        </button>
-        <button
-          onClick={() => setRole('admin')}
-          className={`flex-1 py-2 rounded-xl text-xs font-extrabold font-display transition-all ${
-            role === 'admin' ? theme.pillActive : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          ⚙️ Admin
-        </button>
-      </div>
-
-      {/* Login Form */}
-      <form onSubmit={handleLogin} className="flex flex-col gap-4">
-        {errorMsg && (
-          <div className="p-3.5 bg-rose-50 border-2 border-rose-100 rounded-2xl text-xs font-bold text-rose-500 text-center animate-shake">
-            ⚠️ {errorMsg}
-          </div>
-        )}
-
-        {/* Email Field */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-extrabold text-slate-500 font-display uppercase tracking-wider pl-1">
-            Địa chỉ Email
-          </label>
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="email"
-              required
-              placeholder="nhapemail@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={`w-full pl-11 pr-4 py-3 bg-white border-2 ${theme.borderColor} ${theme.focusBorder} rounded-2xl outline-none font-bold text-slate-700 transition-all ${theme.fontSize}`}
+      {/* Right Column - Mobile & Desktop */}
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8">
+        <div className="w-full max-w-md bg-white shadow-2xl rounded-3xl border border-purple-100 p-6 md:p-8 flex flex-col">
+          {/* Top Section - Mascot */}
+          <div className="flex flex-col items-center mb-6">
+            <OwlAvatar
+              size="md"
+              state={mascotState}
+              text={
+                role === 'student'
+                  ? 'Chào bé! Đăng nhập để học cùng KAI nhé! 🦉'
+                  : role === 'parent'
+                  ? 'Chào Phụ huynh! Xem báo cáo học tập của con.'
+                  : 'Trang Quản lý hệ thống KAI Learning.'
+              }
             />
+            <h1 className="text-3xl font-extrabold text-slate-800 font-display mt-2 lg:hidden">
+              KAI LEARNING
+            </h1>
+            <p className="text-xs text-slate-400 font-bold tracking-widest uppercase mt-0.5 lg:hidden">
+              Prototype v1.0
+            </p>
+          </div>
+
+          {/* Role Selector */}
+          <div className="flex p-1.5 bg-slate-100 rounded-2xl mb-6 shadow-inner gap-1">
+            <button
+              onClick={() => setRole('student')}
+              type="button"
+              className={`flex-1 py-2 rounded-xl text-xs font-extrabold font-display transition-all ${
+                role === 'student' ? theme.pillActive : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              🎒 Học sinh
+            </button>
+            <button
+              onClick={() => setRole('parent')}
+              type="button"
+              className={`flex-1 py-2 rounded-xl text-xs font-extrabold font-display transition-all ${
+                role === 'parent' ? theme.pillActive : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              👨‍👩‍👧 Phụ huynh
+            </button>
+            <button
+              onClick={() => setRole('admin')}
+              type="button"
+              className={`flex-1 py-2 rounded-xl text-xs font-extrabold font-display transition-all ${
+                role === 'admin' ? theme.pillActive : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              ⚙️ Admin
+            </button>
+          </div>
+
+          {/* Login Form */}
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            {errorMsg && (
+              <div className="p-3.5 bg-rose-50 border-2 border-rose-100 rounded-2xl text-xs font-bold text-rose-500 text-center animate-shake">
+                ⚠️ {errorMsg}
+              </div>
+            )}
+
+            {/* Email Field */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-extrabold text-slate-500 font-display uppercase tracking-wider pl-1">
+                Địa chỉ Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="email"
+                  required
+                  placeholder="nhapemail@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`w-full pl-11 pr-4 py-3 bg-white border-2 ${theme.borderColor} ${theme.focusBorder} rounded-2xl outline-none font-bold text-slate-700 transition-all ${theme.fontSize}`}
+                />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-extrabold text-slate-500 font-display uppercase tracking-wider pl-1">
+                Mật khẩu
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`w-full pl-11 pr-4 py-3 bg-white border-2 ${theme.borderColor} ${theme.focusBorder} rounded-2xl outline-none font-bold text-slate-700 transition-all ${theme.fontSize}`}
+                />
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full mt-2 py-3.5 ${theme.accentColor} text-white font-extrabold rounded-2xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 ${
+                role === 'student' ? 'text-lg font-display' : 'text-sm'
+              }`}
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  Đăng nhập ngay
+                  <ChevronRight className="w-5 h-5" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Register Redirect Link */}
+          <div className="text-center mt-6">
+            <p className="text-xs text-slate-400 font-bold">
+              Chưa có tài khoản?{' '}
+              <Link
+                href="/register"
+                className={`font-extrabold hover:underline ${theme.textColor}`}
+              >
+                Đăng ký ngay tại đây
+              </Link>
+            </p>
           </div>
         </div>
-
-        {/* Password Field */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-extrabold text-slate-500 font-display uppercase tracking-wider pl-1">
-            Mật khẩu
-          </label>
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="password"
-              required
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={`w-full pl-11 pr-4 py-3 bg-white border-2 ${theme.borderColor} ${theme.focusBorder} rounded-2xl outline-none font-bold text-slate-700 transition-all ${theme.fontSize}`}
-            />
-          </div>
-        </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full mt-2 py-3.5 ${theme.accentColor} text-white font-extrabold rounded-2xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 ${
-            role === 'student' ? 'text-lg font-display' : 'text-sm'
-          }`}
-        >
-          {loading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          ) : (
-            <>
-              Đăng nhập ngay
-              <ChevronRight className="w-5 h-5" />
-            </>
-          )}
-        </button>
-      </form>
-
-      {/* Register Redirect Link */}
-      <div className="text-center mt-6">
-        <p className="text-xs text-slate-400 font-bold">
-          Chưa có tài khoản?{' '}
-          <Link
-            href="/register"
-            className={`font-extrabold hover:underline ${theme.textColor}`}
-          >
-            Đăng ký ngay tại đây
-          </Link>
-        </p>
       </div>
-    </div>
     </div>
   );
 }

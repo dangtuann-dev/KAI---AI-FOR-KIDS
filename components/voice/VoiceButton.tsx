@@ -11,6 +11,7 @@ interface VoiceButtonProps {
   onTranscript: (text: string) => void;
   onResponse: (text: string) => Promise<void>;
   onError: (errorMsg: string) => void;
+  size?: 'md' | 'lg';
 }
 
 export default function VoiceButton({
@@ -19,6 +20,7 @@ export default function VoiceButton({
   onTranscript,
   onResponse,
   onError,
+  size = 'md',
 }: VoiceButtonProps) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -172,7 +174,8 @@ export default function VoiceButton({
         onPointerUp={stopRecording}
         // Handle pointer leaves button to prevent sticky recording
         onPointerLeave={stopRecording}
-        className={`voice-btn voice-btn--${state}`}
+        className={`voice-btn voice-btn--${state} ${size === 'lg' ? 'w-[88px] h-[88px]' : 'w-[72px] h-[72px]'}`}
+        style={size === 'lg' ? { width: '88px', height: '88px' } : undefined}
         aria-label="Nhấn giữ để nói với KAI"
       >
         {renderIcon()}

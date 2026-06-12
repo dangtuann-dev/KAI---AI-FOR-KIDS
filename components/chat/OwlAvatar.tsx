@@ -7,9 +7,19 @@ type MascotState = 'idle' | 'listening' | 'speaking';
 interface OwlAvatarProps {
   state: MascotState;
   text?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export default function OwlAvatar({ state, text }: OwlAvatarProps) {
+export default function OwlAvatar({ state, text, size = 'md' }: OwlAvatarProps) {
+  const sizeMap = {
+    sm: 'w-16 h-16',
+    md: 'w-28 h-28',
+    lg: 'w-32 h-32',
+    xl: 'w-48 h-48',
+  };
+
+  const widthHeight = sizeMap[size] || sizeMap.md;
+
   // Determine animation class based on state
   const getAnimationClass = () => {
     switch (state) {
@@ -25,7 +35,7 @@ export default function OwlAvatar({ state, text }: OwlAvatarProps) {
 
   return (
     <div className="flex flex-col items-center justify-center p-3 transition-all duration-300">
-      <div className={`relative w-28 h-28 ${getAnimationClass()}`}>
+      <div className={`relative ${widthHeight} ${getAnimationClass()}`}>
         {/* Cute Graduation Cap */}
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-10 z-10 transition-transform duration-300">
           <svg viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-md">
