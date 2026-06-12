@@ -155,7 +155,7 @@ export default function LearnPage() {
             student_id: student.id,
             subject: selectedSubject,
             grade: selectedGrade,
-            ai_model_used: 'llama-3.1-8b-instant'
+            ai_model_used: 'llama-3.3-70b-versatile'
           })
           .select()
           .single();
