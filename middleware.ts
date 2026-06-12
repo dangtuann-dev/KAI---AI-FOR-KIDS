@@ -21,6 +21,9 @@ export async function middleware(request: NextRequest) {
 
   let user: any = null;
   let role: string | null = null;
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
 
   if (isMockMode()) {
     // Read mock auth cookie
@@ -37,7 +40,6 @@ export async function middleware(request: NextRequest) {
   } else {
     // Production Supabase Auth check
     try {
-      const response = NextResponse.next();
       const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -49,6 +51,12 @@ export async function middleware(request: NextRequest) {
             setAll(cookiesToSet) {
               cookiesToSet.forEach(({ name, value, options }) =>
                 request.cookies.set(name, value)
+              );
+              supabaseResponse = NextResponse.next({
+                request,
+              });
+              cookiesToSet.forEach(({ name, value, options }) =>
+                supabaseResponse.cookies.set(name, value, options)
               );
             },
           },
@@ -74,16 +82,26 @@ export async function middleware(request: NextRequest) {
   // Public auth routes (login / register)
   if (pathname === '/login' || pathname === '/register' || pathname === '/') {
     if (user && role) {
-      if (role === 'admin') return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-      if (role === 'parent') return NextResponse.redirect(new URL('/parent/dashboard', request.url));
-      return NextResponse.redirect(new URL('/learn', request.url));
+      let redirectUrl = '/learn';
+      if (role === 'admin') redirectUrl = '/admin/dashboard';
+      else if (role === 'parent') redirectUrl = '/parent/dashboard';
+      
+      const response = NextResponse.redirect(new URL(redirectUrl, request.url));
+      supabaseResponse.cookies.getAll().forEach(cookie => {
+        response.cookies.set(cookie.name, cookie.value);
+      });
+      return response;
     }
     
     // Redirect / to login by default
     if (pathname === '/') {
-      return NextResponse.redirect(new URL('/login', request.url));
+      const response = NextResponse.redirect(new URL('/login', request.url));
+      supabaseResponse.cookies.getAll().forEach(cookie => {
+        response.cookies.set(cookie.name, cookie.value);
+      });
+      return response;
     }
-    return NextResponse.next();
+    return supabaseResponse;
   }
 
   // Protected routes check
@@ -91,21 +109,37 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url);
     // Add redirect back URL
     loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl);
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+      response.cookies.set(cookie.name, cookie.value);
+    });
+    return response;
   }
 
   // Role-based access control redirects
   if (pathname.startsWith('/admin') && role !== 'admin') {
-    return NextResponse.redirect(new URL('/login', request.url));
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+      response.cookies.set(cookie.name, cookie.value);
+    });
+    return response;
   }
   if (pathname.startsWith('/parent') && role !== 'parent' && role !== 'admin') {
-    return NextResponse.redirect(new URL('/login', request.url));
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+      response.cookies.set(cookie.name, cookie.value);
+    });
+    return response;
   }
   if (pathname.startsWith('/learn') && role !== 'student' && role !== 'admin') {
-    return NextResponse.redirect(new URL('/login', request.url));
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    supabaseResponse.cookies.getAll().forEach(cookie => {
+      response.cookies.set(cookie.name, cookie.value);
+    });
+    return response;
   }
 
-  return NextResponse.next();
+  return supabaseResponse;
 }
 
 export const config = {
