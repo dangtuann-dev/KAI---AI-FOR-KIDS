@@ -82,7 +82,7 @@ export default function KaiCharacter({ state, audioElement }: Props) {
       <svg 
         viewBox="0 0 400 400" 
         xmlns="http://www.w3.org/2000/svg"
-        className="w-full max-w-[320px] md:max-w-[360px] h-auto drop-shadow-xl"
+        className="w-full max-w-[400px] md:max-w-[460px] lg:max-w-[500px] h-auto drop-shadow-2xl transition-all duration-300 transform hover:scale-[1.02]"
       >
         {/* White circular framing card container */}
         <circle cx="200" cy="200" r="165" fill="#F8FAFC" stroke="#E2E8F0" strokeWidth="6" />
@@ -155,6 +155,10 @@ export default function KaiCharacter({ state, audioElement }: Props) {
             {renderEyes()}
           </g>
 
+          {/* Rosy Pink Cheeks Blush (Very Cute!) */}
+          <rect x="150" y="156" width="14" height="7" rx="3.5" fill="#FDA4AF" opacity="0.75" />
+          <rect x="236" y="156" width="14" height="7" rx="3.5" fill="#FDA4AF" opacity="0.75" />
+
           {/* White Snout */}
           <rect x="180" y="150" width="40" height="30" rx="12" fill="#FFFFFF" />
           
@@ -169,6 +173,16 @@ export default function KaiCharacter({ state, audioElement }: Props) {
               transform="translate(0, -53) scale(0.65)" 
               className="transition-all duration-75 origin-center" 
             />
+          </g>
+
+          {/* Cute Purple Bowtie */}
+          <g id="kai-bowtie" className="transition-transform duration-300 origin-center">
+            {/* Left loop */}
+            <polygon points="180,212 194,220 180,228" fill="#6C63FF" stroke="#5046E5" strokeWidth="1" />
+            {/* Right loop */}
+            <polygon points="220,212 206,220 220,228" fill="#6C63FF" stroke="#5046E5" strokeWidth="1" />
+            {/* Center knot */}
+            <rect x="194" y="215" width="12" height="10" rx="2" fill="#5046E5" />
           </g>
         </g>
       </svg>

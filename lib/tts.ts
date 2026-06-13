@@ -13,8 +13,8 @@ export const KAI_VOICE = 'vi-VN-NamMinhNeural';
  * - volume +0%: giữ nguyên âm lượng
  */
 export const CARTOON_VOICE_OPTIONS = {
-  rate: '+8%',
-  pitch: '+15Hz',
+  rate: '+3%',
+  pitch: '+0Hz',
   volume: '+0%',
 };
 

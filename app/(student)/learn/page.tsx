@@ -552,11 +552,33 @@ export default function LearnPage() {
         </div>
 
         {/* KAI Character & Subtitles Stage */}
-        <div className="flex-1 flex flex-col justify-center items-center p-4 min-h-0 relative">
+        <div className="flex-1 flex flex-col justify-center items-center p-4 min-h-0 relative w-full">
           
-          {/* Mascot Stage */}
-          <div className="flex-1 flex items-center justify-center min-h-0 w-full">
-            <KaiCharacter state={characterState} audioElement={currentAudio} />
+          {/* Video Call Frame Container */}
+          <div className="flex-1 w-full max-w-4xl bg-gradient-to-b from-slate-900 to-slate-950 rounded-[32px] border-4 border-slate-800 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center p-6 my-2">
+            
+            {/* Live Video Indicator */}
+            <div className="absolute top-4 left-4 flex items-center gap-2 bg-slate-900/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/50 text-white z-20 shadow-md">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-black tracking-wider uppercase font-display">TRỰC TUYẾN</span>
+            </div>
+
+            {/* Video Call Shutter Frame Decoration (Top Right) */}
+            <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-slate-600/50" />
+            {/* Video Call Shutter Frame Decoration (Bottom Left) */}
+            <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-slate-600/50" />
+            {/* Video Call Shutter Frame Decoration (Bottom Right) */}
+            <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-slate-600/50" />
+
+            {/* Mascot Stage */}
+            <div className="flex-1 flex items-center justify-center min-h-0 w-full relative z-10">
+              <KaiCharacter state={characterState} audioElement={currentAudio} />
+            </div>
+
+            {/* Subject/Topic water-mark on bottom corner of video feed */}
+            <div className="absolute bottom-4 left-6 bg-slate-900/60 backdrop-blur-md px-3 py-1 rounded-xl text-slate-300 text-[10px] font-bold uppercase tracking-widest z-15 border border-slate-700/30">
+              {SUBJECTS.find(s => s.id === selectedSubject)?.name || 'KAI'} Feed
+            </div>
           </div>
 
           {/* Subtitle Caption Stage */}
