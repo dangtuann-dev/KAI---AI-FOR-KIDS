@@ -24,16 +24,16 @@ export default function KaiCharacter({ state, audioElement }: Props) {
     mouthShape = audioElement ? audio.mouthShape : fake.mouthShape;
   }
 
-  const { blinkState, earState, armState } = useCharacterState(state);
+  const { blinkState, earState } = useCharacterState(state);
 
-  // Render eyes based on blink and KAI state
+  // Render eyes (Duolingo-inspired ultra-cute style with catchlights)
   const renderEyes = () => {
     if (blinkState) {
-      // Blinking: horizontal flat lines
+      // Blinking: cute curved lines
       return (
         <>
-          <line x1="156" y1="137" x2="174" y2="137" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" />
-          <line x1="226" y1="137" x2="244" y2="137" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" />
+          <path d="M 142 130 Q 155 138 168 130" stroke="#4A4A5A" strokeWidth="6" strokeLinecap="round" fill="none" />
+          <path d="M 232 130 Q 245 138 258 130" stroke="#4A4A5A" strokeWidth="6" strokeLinecap="round" fill="none" />
         </>
       );
     }
@@ -42,91 +42,147 @@ export default function KaiCharacter({ state, audioElement }: Props) {
       // Happy curves: ^ ^
       return (
         <>
-          <path d="M 156 142 Q 165 128 174 142" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" fill="none" />
-          <path d="M 226 142 Q 235 128 244 142" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" fill="none" />
+          <path d="M 142 132 Q 155 116 168 132" stroke="#FDA4AF" strokeWidth="7" strokeLinecap="round" fill="none" />
+          <path d="M 232 132 Q 245 116 258 132" stroke="#FDA4AF" strokeWidth="7" strokeLinecap="round" fill="none" />
         </>
       );
     }
 
     if (state === 'thinking') {
-      // Thinking: curious flat lines
+      // Thinking: looking to the side/slanted
       return (
         <>
-          <line x1="156" y1="134" x2="174" y2="134" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" />
-          <line x1="226" y1="134" x2="244" y2="134" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" />
+          {/* Left Eye */}
+          <circle cx="155" cy="128" r="18" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
+          <circle cx="151" cy="128" r="9.5" fill="#222230" />
+          <circle cx="148" cy="125" r="3.5" fill="#FFFFFF" />
+          
+          {/* Right Eye */}
+          <circle cx="245" cy="128" r="18" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
+          <circle cx="241" cy="128" r="9.5" fill="#222230" />
+          <circle cx="238" cy="125" r="3.5" fill="#FFFFFF" />
         </>
       );
     }
 
     if (state === 'listening') {
-      // Attentive: wide vertical/square eyes
+      // Wide attentive eyes looking slightly upwards
       return (
         <>
-          <rect x="158" y="128" width="12" height="15" rx="3" fill="#FFFFFF" />
-          <rect x="230" y="128" width="12" height="15" rx="3" fill="#FFFFFF" />
+          {/* Left Eye */}
+          <circle cx="155" cy="128" r="19" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
+          <circle cx="155" cy="124" r="10" fill="#222230" />
+          <circle cx="153" cy="121" r="4" fill="#FFFFFF" />
+          
+          {/* Right Eye */}
+          <circle cx="245" cy="128" r="19" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
+          <circle cx="245" cy="124" r="10" fill="#222230" />
+          <circle cx="243" cy="121" r="4" fill="#FFFFFF" />
         </>
       );
     }
 
-    // Default idle: slanted blocky eyes
+    // Default Idle: Big round glossy friendly eyes
     return (
       <>
-        <line x1="158" y1="132" x2="172" y2="142" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" />
-        <line x1="242" y1="132" x2="228" y2="142" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" />
+        {/* Left Eye */}
+        <circle cx="155" cy="128" r="18" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
+        <circle cx="155" cy="128" r="9.5" fill="#222230" />
+        <circle cx="152" cy="125" r="3.5" fill="#FFFFFF" />
+        <circle cx="158" cy="131" r="1.5" fill="#FFFFFF" />
+        
+        {/* Right Eye */}
+        <circle cx="245" cy="128" r="18" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
+        <circle cx="245" cy="128" r="9.5" fill="#222230" />
+        <circle cx="242" cy="125" r="3.5" fill="#FFFFFF" />
+        <circle cx="248" cy="131" r="1.5" fill="#FFFFFF" />
+      </>
+    );
+  };
+
+  // Render eyebrows based on state
+  const renderEyebrows = () => {
+    if (state === 'happy' || state === 'encourage') {
+      return (
+        <>
+          <path d="M 138 98 Q 155 92 170 100" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
+          <path d="M 230 100 Q 245 92 262 98" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
+        </>
+      );
+    }
+
+    if (state === 'thinking') {
+      return (
+        <>
+          <path d="M 140 106 Q 155 98 168 102" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
+          <path d="M 232 102 Q 245 98 258 106" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
+        </>
+      );
+    }
+
+    if (state === 'listening') {
+      return (
+        <>
+          <path d="M 140 96 Q 155 92 168 96" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
+          <path d="M 232 96 Q 245 92 258 96" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
+        </>
+      );
+    }
+
+    // Default Idle
+    return (
+      <>
+        <path d="M 140 102 Q 155 98 168 102" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <path d="M 232 102 Q 245 98 258 102" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
       </>
     );
   };
 
   return (
-    <div className={`kai-character kai-character--${state} flex justify-center items-center`}>
+    <div className={`kai-character kai-character--${state} flex justify-center items-center w-full h-full`}>
       <svg 
-        viewBox="0 0 400 400" 
+        viewBox="100 50 200 200" 
         xmlns="http://www.w3.org/2000/svg"
-        className="w-full max-w-[400px] md:max-w-[460px] lg:max-w-[500px] h-auto drop-shadow-2xl transition-all duration-300 transform hover:scale-[1.02]"
+        className="w-full max-w-[500px] md:max-w-[580px] lg:max-w-[620px] h-auto drop-shadow-2xl transition-all duration-300 transform hover:scale-[1.02]"
       >
-        {/* White circular framing card container */}
-        <circle cx="200" cy="200" r="165" fill="#F8FAFC" stroke="#E2E8F0" strokeWidth="6" />
+        <defs>
+          {/* Head gradient: smooth 3D dark charcoal */}
+          <linearGradient id="bear-head-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#373746" />
+            <stop offset="100%" stopColor="#1E1E28" />
+          </linearGradient>
 
-        {/* Drop shadow under the bear */}
-        <ellipse cx="200" cy="345" rx="80" ry="10" fill="#E2E8F0" opacity="0.8" />
-
-        {/* === LEGS === */}
-        <g id="kai-legs">
-          {/* Left Leg */}
-          <rect x="155" y="305" width="34" height="40" rx="4" fill="#141417" />
-          <rect x="155" y="340" width="34" height="5" rx="1.5" fill="#2E2E32" />
+          {/* Body gradient: slightly darker */}
+          <linearGradient id="bear-body-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#2A2A38" />
+            <stop offset="100%" stopColor="#15151F" />
+          </linearGradient>
           
-          {/* Right Leg */}
-          <rect x="211" y="305" width="34" height="40" rx="4" fill="#28282B" />
-          <rect x="211" y="340" width="34" height="5" rx="1.5" fill="#3E3E44" />
-        </g>
+          {/* Soft radial blush gradient */}
+          <radialGradient id="blush-grad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FDA4AF" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#FDA4AF" stopOpacity="0" />
+          </radialGradient>
 
-        {/* === BODY === */}
+          {/* Snout cream-colored gradient */}
+          <linearGradient id="snout-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FFFDF7" />
+            <stop offset="100%" stopColor="#F7EAD3" />
+          </linearGradient>
+        </defs>
+
+        {/* === BODY & SHOULDERS === */}
         <g id="kai-body" className="kai-body origin-bottom transition-transform duration-300">
-          {/* Base body rect */}
-          <rect x="130" y="205" width="140" height="105" rx="8" fill="#1C1C1E" />
+          <path d="M 100 240 Q 200 215 300 240 L 300 280 L 100 280 Z" fill="url(#bear-body-grad)" />
           
-          {/* Voxel 3D Crease facets */}
-          <polygon points="130,205 200,205 200,310 130,310" fill="#141417" />
-          <polygon points="200,205 270,205 270,310 200,310" fill="#28282B" />
-          
-          {/* Diagonal crease shadows/highlights */}
-          <polygon points="130,310 200,250 200,310" fill="#101012" />
-          <polygon points="270,310 200,250 200,310" fill="#323236" />
-        </g>
-
-        {/* === ARMS === */}
-        <g id="kai-arms" className={`kai-arms kai-arms--${armState}`}>
-          {/* Left Arm */}
-          <g id="kai-arm-left" className="origin-top transition-transform duration-300">
-            <rect x="90" y="205" width="32" height="80" rx="6" fill="#141417" />
-            <rect x="90" y="205" width="10" height="80" rx="4" fill="#0C0C0F" />
-          </g>
-          
-          {/* Right Arm */}
-          <g id="kai-arm-right" className="origin-top transition-transform duration-300">
-            <rect x="278" y="205" width="32" height="80" rx="6" fill="#2A2A2E" />
-            <rect x="298" y="205" width="12" height="80" rx="4" fill="#38383D" />
+          {/* Cute Purple Bowtie */}
+          <g id="kai-bowtie" className="transition-transform duration-300 origin-center">
+            {/* Left loop */}
+            <polygon points="175,214 192,224 175,234" fill="#8B5CF6" stroke="#6D28D9" strokeWidth="1" />
+            {/* Right loop */}
+            <polygon points="225,214 208,224 225,234" fill="#8B5CF6" stroke="#6D28D9" strokeWidth="1" />
+            {/* Center knot */}
+            <rect x="193" y="218" width="14" height="12" rx="4" fill="#6D28D9" />
           </g>
         </g>
 
@@ -135,54 +191,48 @@ export default function KaiCharacter({ state, audioElement }: Props) {
           {/* Ears */}
           <g id="kai-ears" className={`kai-ears kai-ears--${earState}`}>
             {/* Left Ear */}
-            <rect id="ear-left" x="122" y="72" width="34" height="34" rx="6" fill="#141417" />
-            <rect x="131" y="81" width="16" height="16" rx="3" fill="#F87171" opacity="0.6" />
+            <circle cx="130" cy="85" r="24" fill="#1E1E28" stroke="#15151F" strokeWidth="1" />
+            <circle cx="130" cy="85" r="14" fill="#FDA4AF" opacity="0.85" />
             
             {/* Right Ear */}
-            <rect id="ear-right" x="244" y="72" width="34" height="34" rx="6" fill="#28282B" />
-            <rect x="253" y="81" width="16" height="16" rx="3" fill="#F87171" opacity="0.6" />
+            <circle cx="270" cy="85" r="24" fill="#242432" stroke="#15151F" strokeWidth="1" />
+            <circle cx="270" cy="85" r="14" fill="#FDA4AF" opacity="0.85" />
           </g>
 
-          {/* Base Head Square */}
-          <rect x="140" y="90" width="120" height="120" rx="16" fill="#1C1C1F" />
-          
-          {/* 3D Face Shading */}
-          <path d="M 140 106 A 16 16 0 0 1 156 90 L 200 90 L 200 210 L 156 210 A 16 16 0 0 1 140 194 Z" fill="#121215" opacity="0.4" />
-          <path d="M 200 90 L 244 90 A 16 16 0 0 1 260 106 L 260 194 A 16 16 0 0 1 244 210 L 200 210 Z" fill="#323236" opacity="0.15" />
+          {/* Smooth Round Head (Duolingo Style) */}
+          <rect x="120" y="75" width="160" height="150" rx="75" fill="url(#bear-head-grad)" stroke="#1A1A24" strokeWidth="1" />
 
-          {/* Dynamic Voxel Eyes */}
+          {/* Soft Highlight on top of head */}
+          <ellipse cx="200" cy="85" rx="50" ry="8" fill="#FFFFFF" opacity="0.12" />
+
+          {/* Eyebrows */}
+          <g id="kai-eyebrows" className="transition-all duration-300">
+            {renderEyebrows()}
+          </g>
+
+          {/* Dynamic Eyes */}
           <g id="kai-eyes" className="transition-all duration-300">
             {renderEyes()}
           </g>
 
-          {/* Rosy Pink Cheeks Blush (Very Cute!) */}
-          <rect x="150" y="156" width="14" height="7" rx="3.5" fill="#FDA4AF" opacity="0.75" />
-          <rect x="236" y="156" width="14" height="7" rx="3.5" fill="#FDA4AF" opacity="0.75" />
+          {/* Rosy Pink Cheeks Blush */}
+          <circle cx="138" cy="158" r="12" fill="url(#blush-grad)" />
+          <circle cx="262" cy="158" r="12" fill="url(#blush-grad)" />
 
-          {/* White Snout */}
-          <rect x="180" y="150" width="40" height="30" rx="12" fill="#FFFFFF" />
+          {/* Cream Snout */}
+          <ellipse cx="200" cy="170" rx="28" ry="20" fill="url(#snout-grad)" stroke="#E2D8C5" strokeWidth="1" />
           
-          {/* Nose */}
-          <rect x="194" y="154" width="12" height="8" rx="4" fill="#1C1C1F" />
+          {/* Cute Nose */}
+          <path d="M 192 158 C 192 154, 208 154, 208 158 C 208 163, 200 168, 200 168 C 200 168, 192 163, 192 158 Z" fill="#222230" />
 
           {/* Mouth — Lip sync target with translation scale */}
           <g id="kai-mouth">
             <path 
               d={MOUTH_SHAPES[mouthShape]} 
-              fill="#1C1C1F" 
+              fill="#222230" 
               transform="translate(0, -53) scale(0.65)" 
               className="transition-all duration-75 origin-center" 
             />
-          </g>
-
-          {/* Cute Purple Bowtie */}
-          <g id="kai-bowtie" className="transition-transform duration-300 origin-center">
-            {/* Left loop */}
-            <polygon points="180,212 194,220 180,228" fill="#6C63FF" stroke="#5046E5" strokeWidth="1" />
-            {/* Right loop */}
-            <polygon points="220,212 206,220 220,228" fill="#6C63FF" stroke="#5046E5" strokeWidth="1" />
-            {/* Center knot */}
-            <rect x="194" y="215" width="12" height="10" rx="2" fill="#5046E5" />
           </g>
         </g>
       </svg>
