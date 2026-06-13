@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut, Send, Keyboard, Mic, WifiOff, RefreshCw } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
-import SubjectSelector, { SUBJECTS } from '@/components/kid/SubjectSelector';
+import SubjectSelector, { getSubjectsForGrade } from '@/components/kid/SubjectSelector';
 import GradeSelector from '@/components/kid/GradeSelector';
 import ProgressBadge from '@/components/kid/ProgressBadge';
 import ChatHistory from '@/components/chat/ChatHistory';
@@ -115,6 +115,15 @@ export default function LearnPage() {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // Reset selected subject if it's not valid for the selected grade (GDPT 2018 validation)
+  useEffect(() => {
+    const validSubjects = getSubjectsForGrade(selectedGrade);
+    const isValid = validSubjects.some(s => s.id === selectedSubject);
+    if (!isValid && validSubjects.length > 0) {
+      setSelectedSubject(validSubjects[0].id);
+    }
+  }, [selectedGrade, selectedSubject]);
 
   // Check auth and fetch student profile
   useEffect(() => {
@@ -445,22 +454,35 @@ export default function LearnPage() {
             Chọn môn học
           </p>
           <div className="flex flex-col gap-2">
-            {SUBJECTS.map((s) => {
+            {getSubjectsForGrade(selectedGrade).map((s) => {
               const isActive = s.id === selectedSubject;
               return (
                 <button
                   key={s.id}
                   onClick={() => setSelectedSubject(s.id)}
-                  className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all font-bold font-display text-sm active:scale-95 ${
-                    isActive
-                      ? `${s.color} border-current shadow-md ${s.textColor}`
-                      : 'border-transparent bg-slate-50/50 hover:bg-slate-50 text-slate-600'
+                  className={`transition-all duration-300 transform active:scale-95 border-2 flex items-center gap-3 px-4 py-2.5 rounded-2xl ${
+                    isActive 
+                      ? `${s.color} ${s.textColor} ${s.borderColor} shadow-sm font-black` 
+                      : 'border-transparent bg-slate-50/70 hover:bg-slate-50 text-slate-600 font-bold'
                   }`}
                 >
-                  <span className="text-lg flex items-center justify-center shrink-0">
+                  <span className={`text-base flex items-center justify-center shrink-0 p-1.5 rounded-xl transition-all ${
+                    isActive ? 'bg-white shadow-sm' : 'bg-slate-100/80 text-slate-500'
+                  }`}>
                     {s.icon}
                   </span>
-                  <span>{s.name}</span>
+                  <div className="flex flex-col items-start">
+                    <span className="font-display text-xs tracking-wide">{s.name}</span>
+                    {s.tag && (
+                      <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded-md mt-0.5 ${
+                        s.tag === 'Tự chọn' 
+                          ? 'bg-slate-200/60 text-slate-500' 
+                          : 'bg-blue-100 text-blue-600'
+                      }`}>
+                        {s.tag}
+                      </span>
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -540,6 +562,7 @@ export default function LearnPage() {
           <SubjectSelector
             selectedId={selectedSubject}
             onSelectSubject={setSelectedSubject}
+            grade={selectedGrade}
           />
         </div>
 
@@ -577,7 +600,7 @@ export default function LearnPage() {
 
             {/* Subject/Topic water-mark on bottom corner of video feed */}
             <div className="absolute bottom-4 left-6 bg-slate-900/60 backdrop-blur-md px-3 py-1 rounded-xl text-slate-300 text-[10px] font-bold uppercase tracking-widest z-15 border border-slate-700/30">
-              {SUBJECTS.find(s => s.id === selectedSubject)?.name || 'KAI'} Feed
+              {getSubjectsForGrade(selectedGrade).find(s => s.id === selectedSubject)?.name || 'KAI'} Feed
             </div>
           </div>
 
