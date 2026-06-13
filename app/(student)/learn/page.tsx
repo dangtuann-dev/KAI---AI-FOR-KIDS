@@ -265,11 +265,7 @@ export default function LearnPage() {
 
   // Handle playing TTS text and syncing mascot speaking state
   const playTTS = async (text: string) => {
-    setVoiceState('playing');
-    setCharacterState('speaking');
-    setActiveCaption({ speaker: 'kai', text });
-    
-    // Stop any current audio
+    // Stop any current audio immediately
     if (currentAudioRef.current) {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -285,6 +281,7 @@ export default function LearnPage() {
         () => {
           setVoiceState('playing');
           setCharacterState('speaking');
+          setActiveCaption({ speaker: 'kai', text });
         },
         () => {
           const encouragement = detectEncouragement(text);
@@ -313,6 +310,7 @@ export default function LearnPage() {
       console.error(e);
       setVoiceState('idle');
       setCharacterState('idle');
+      setActiveCaption(null);
     }
   };
 
