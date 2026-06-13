@@ -1,7 +1,7 @@
 // components/character/KaiCharacter.tsx
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCharacterState, CharacterState } from './useCharacterState';
 import { useLipSync, useFakeLipSync } from './useLipSync';
 import { MOUTH_SHAPES } from './mouthShapes';
@@ -26,7 +26,36 @@ export default function KaiCharacter({ state, audioElement }: Props) {
 
   const { blinkState, earState } = useCharacterState(state);
 
-  // Render eyes (Duolingo-inspired ultra-cute style with catchlights)
+  // Mouse tracking to make KAI's eyes follow the cursor
+  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const el = document.querySelector('.kai-character');
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const headX = rect.left + rect.width / 2;
+      const headY = rect.top + rect.height / 3;
+      
+      const dx = e.clientX - headX;
+      const dy = e.clientY - headY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      if (dist === 0) return;
+      
+      const maxOffset = 3.5;
+      const limit = Math.min(maxOffset, dist / 40);
+      const x = (dx / dist) * limit;
+      const y = (dy / dist) * limit;
+      
+      setMouseOffset({ x, y });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Render eyes (Duolingo-inspired ultra-cute style with cursor tracking)
   const renderEyes = () => {
     if (blinkState) {
       // Blinking: cute curved lines
@@ -49,53 +78,53 @@ export default function KaiCharacter({ state, audioElement }: Props) {
     }
 
     if (state === 'thinking') {
-      // Thinking: looking to the side/slanted
+      // Thinking: looking sideways
       return (
         <>
           {/* Left Eye */}
-          <circle cx="155" cy="128" r="18" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
-          <circle cx="151" cy="128" r="9.5" fill="#222230" />
-          <circle cx="148" cy="125" r="3.5" fill="#FFFFFF" />
+          <circle cx="155" cy="128" r="18" fill="#FFFFFF" />
+          <circle cx={151 + mouseOffset.x} cy={128 + mouseOffset.y} r="9.5" fill="#222230" />
+          <circle cx={148 + mouseOffset.x * 1.2} cy={125 + mouseOffset.y * 1.2} r="3.5" fill="#FFFFFF" />
           
           {/* Right Eye */}
-          <circle cx="245" cy="128" r="18" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
-          <circle cx="241" cy="128" r="9.5" fill="#222230" />
-          <circle cx="238" cy="125" r="3.5" fill="#FFFFFF" />
+          <circle cx="245" cy="128" r="18" fill="#FFFFFF" />
+          <circle cx={241 + mouseOffset.x} cy={128 + mouseOffset.y} r="9.5" fill="#222230" />
+          <circle cx={238 + mouseOffset.x * 1.2} cy={125 + mouseOffset.y * 1.2} r="3.5" fill="#FFFFFF" />
         </>
       );
     }
 
     if (state === 'listening') {
-      // Wide attentive eyes looking slightly upwards
+      // Wide attentive eyes looking slightly upwards / towards cursor
       return (
         <>
           {/* Left Eye */}
-          <circle cx="155" cy="128" r="19" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
-          <circle cx="155" cy="124" r="10" fill="#222230" />
-          <circle cx="153" cy="121" r="4" fill="#FFFFFF" />
+          <circle cx="155" cy="128" r="19" fill="#FFFFFF" />
+          <circle cx={155 + mouseOffset.x} cy={124 + mouseOffset.y} r="10" fill="#222230" />
+          <circle cx={153 + mouseOffset.x * 1.2} cy={121 + mouseOffset.y * 1.2} r="4" fill="#FFFFFF" />
           
           {/* Right Eye */}
-          <circle cx="245" cy="128" r="19" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
-          <circle cx="245" cy="124" r="10" fill="#222230" />
-          <circle cx="243" cy="121" r="4" fill="#FFFFFF" />
+          <circle cx="245" cy="128" r="19" fill="#FFFFFF" />
+          <circle cx={245 + mouseOffset.x} cy={124 + mouseOffset.y} r="10" fill="#222230" />
+          <circle cx={243 + mouseOffset.x * 1.2} cy={121 + mouseOffset.y * 1.2} r="4" fill="#FFFFFF" />
         </>
       );
     }
 
-    // Default Idle: Big round glossy friendly eyes
+    // Default Idle: Big round glossy friendly eyes tracking cursor
     return (
       <>
         {/* Left Eye */}
-        <circle cx="155" cy="128" r="18" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
-        <circle cx="155" cy="128" r="9.5" fill="#222230" />
-        <circle cx="152" cy="125" r="3.5" fill="#FFFFFF" />
-        <circle cx="158" cy="131" r="1.5" fill="#FFFFFF" />
+        <circle cx="155" cy="128" r="18" fill="#FFFFFF" />
+        <circle cx={155 + mouseOffset.x} cy={128 + mouseOffset.y} r="9.5" fill="#222230" />
+        <circle cx={152 + mouseOffset.x * 1.2} cy={125 + mouseOffset.y * 1.2} r="3.5" fill="#FFFFFF" />
+        <circle cx={158 + mouseOffset.x * 0.8} cy={131 + mouseOffset.y * 0.8} r="1.5" fill="#FFFFFF" />
         
         {/* Right Eye */}
-        <circle cx="245" cy="128" r="18" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
-        <circle cx="245" cy="128" r="9.5" fill="#222230" />
-        <circle cx="242" cy="125" r="3.5" fill="#FFFFFF" />
-        <circle cx="248" cy="131" r="1.5" fill="#FFFFFF" />
+        <circle cx="245" cy="128" r="18" fill="#FFFFFF" />
+        <circle cx={245 + mouseOffset.x} cy={128 + mouseOffset.y} r="9.5" fill="#222230" />
+        <circle cx={242 + mouseOffset.x * 1.2} cy={125 + mouseOffset.y * 1.2} r="3.5" fill="#FFFFFF" />
+        <circle cx={248 + mouseOffset.x * 0.8} cy={131 + mouseOffset.y * 0.8} r="1.5" fill="#FFFFFF" />
       </>
     );
   };
@@ -145,44 +174,18 @@ export default function KaiCharacter({ state, audioElement }: Props) {
         xmlns="http://www.w3.org/2000/svg"
         className="w-full max-w-[500px] md:max-w-[580px] lg:max-w-[620px] h-auto drop-shadow-2xl transition-all duration-300 transform hover:scale-[1.02]"
       >
-        <defs>
-          {/* Head gradient: smooth 3D dark charcoal */}
-          <linearGradient id="bear-head-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#373746" />
-            <stop offset="100%" stopColor="#1E1E28" />
-          </linearGradient>
-
-          {/* Body gradient: slightly darker */}
-          <linearGradient id="bear-body-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#2A2A38" />
-            <stop offset="100%" stopColor="#15151F" />
-          </linearGradient>
-          
-          {/* Soft radial blush gradient */}
-          <radialGradient id="blush-grad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#FDA4AF" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#FDA4AF" stopOpacity="0" />
-          </radialGradient>
-
-          {/* Snout cream-colored gradient */}
-          <linearGradient id="snout-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#FFFDF7" />
-            <stop offset="100%" stopColor="#F7EAD3" />
-          </linearGradient>
-        </defs>
-
         {/* === BODY & SHOULDERS === */}
         <g id="kai-body" className="kai-body origin-bottom transition-transform duration-300">
-          <path d="M 100 240 Q 200 215 300 240 L 300 280 L 100 280 Z" fill="url(#bear-body-grad)" />
+          <path d="M 100 240 Q 200 220 300 240 L 300 280 L 100 280 Z" fill="#252530" />
           
           {/* Cute Purple Bowtie */}
           <g id="kai-bowtie" className="transition-transform duration-300 origin-center">
             {/* Left loop */}
-            <polygon points="175,214 192,224 175,234" fill="#8B5CF6" stroke="#6D28D9" strokeWidth="1" />
+            <polygon points="176,215 192,223 176,231" fill="#8B5CF6" />
             {/* Right loop */}
-            <polygon points="225,214 208,224 225,234" fill="#8B5CF6" stroke="#6D28D9" strokeWidth="1" />
+            <polygon points="224,215 208,223 224,231" fill="#8B5CF6" />
             {/* Center knot */}
-            <rect x="193" y="218" width="14" height="12" rx="4" fill="#6D28D9" />
+            <rect x="193" y="218" width="14" height="10" rx="3" fill="#6D28D9" />
           </g>
         </g>
 
@@ -191,19 +194,16 @@ export default function KaiCharacter({ state, audioElement }: Props) {
           {/* Ears */}
           <g id="kai-ears" className={`kai-ears kai-ears--${earState}`}>
             {/* Left Ear */}
-            <circle cx="130" cy="85" r="24" fill="#1E1E28" stroke="#15151F" strokeWidth="1" />
-            <circle cx="130" cy="85" r="14" fill="#FDA4AF" opacity="0.85" />
+            <circle cx="130" cy="85" r="22" fill="#2D2D38" />
+            <circle cx="130" cy="85" r="12" fill="#FDA4AF" />
             
             {/* Right Ear */}
-            <circle cx="270" cy="85" r="24" fill="#242432" stroke="#15151F" strokeWidth="1" />
-            <circle cx="270" cy="85" r="14" fill="#FDA4AF" opacity="0.85" />
+            <circle cx="270" cy="85" r="22" fill="#2D2D38" />
+            <circle cx="270" cy="85" r="12" fill="#FDA4AF" />
           </g>
 
           {/* Smooth Round Head (Duolingo Style) */}
-          <rect x="120" y="75" width="160" height="150" rx="75" fill="url(#bear-head-grad)" stroke="#1A1A24" strokeWidth="1" />
-
-          {/* Soft Highlight on top of head */}
-          <ellipse cx="200" cy="85" rx="50" ry="8" fill="#FFFFFF" opacity="0.12" />
+          <rect x="120" y="75" width="160" height="150" rx="75" fill="#2D2D38" />
 
           {/* Eyebrows */}
           <g id="kai-eyebrows" className="transition-all duration-300">
@@ -216,22 +216,21 @@ export default function KaiCharacter({ state, audioElement }: Props) {
           </g>
 
           {/* Rosy Pink Cheeks Blush */}
-          <circle cx="138" cy="158" r="12" fill="url(#blush-grad)" />
-          <circle cx="262" cy="158" r="12" fill="url(#blush-grad)" />
+          <circle cx="138" cy="158" r="8" fill="#FDA4AF" opacity="0.6" />
+          <circle cx="262" cy="158" r="8" fill="#FDA4AF" opacity="0.6" />
 
           {/* Cream Snout */}
-          <ellipse cx="200" cy="170" rx="28" ry="20" fill="url(#snout-grad)" stroke="#E2D8C5" strokeWidth="1" />
+          <ellipse cx="200" cy="170" rx="26" ry="18" fill="#FFFDF9" />
           
           {/* Cute Nose */}
           <path d="M 192 158 C 192 154, 208 154, 208 158 C 208 163, 200 168, 200 168 C 200 168, 192 163, 192 158 Z" fill="#222230" />
 
           {/* Mouth — Lip sync target with translation scale */}
-          <g id="kai-mouth">
+          <g id="kai-mouth" transform="translate(40, -10) scale(0.8)">
             <path 
               d={MOUTH_SHAPES[mouthShape]} 
               fill="#222230" 
-              transform="translate(0, -53) scale(0.65)" 
-              className="transition-all duration-75 origin-center" 
+              className="transition-all duration-75" 
             />
           </g>
         </g>
