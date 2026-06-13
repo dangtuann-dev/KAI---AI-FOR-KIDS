@@ -10,7 +10,7 @@ import ProgressBadge from '@/components/kid/ProgressBadge';
 import ChatHistory from '@/components/chat/ChatHistory';
 import OwlAvatar from '@/components/chat/OwlAvatar';
 import VoiceButton, { VoiceState } from '@/components/voice/VoiceButton';
-import { speakText } from '@/lib/tts-client';
+import { speakText, stopAllSpeech } from '@/lib/tts-client';
 import KaiCharacter from '@/components/character/KaiCharacter';
 import CaptionBar from '@/components/workspace/CaptionBar';
 import ChatLogDrawer from '@/components/workspace/ChatLogDrawer';
@@ -54,6 +54,22 @@ export default function LearnPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   
   const currentAudioRef = useRef<HTMLAudioElement | SpeechSynthesisUtterance | null>(null);
+  const isMountedRef = useRef(true);
+  const sessionIdRef = useRef('');
+
+  // Handle component mounting/unmounting and general audio cleanup
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      stopAllSpeech();
+    };
+  }, []);
+
+  // Sync session ID ref to access current session state in async callbacks
+  useEffect(() => {
+    sessionIdRef.current = sessionId;
+  }, [sessionId]);
 
   // Monitor screen size for responsive layouts
   useEffect(() => {
@@ -77,14 +93,7 @@ export default function LearnPage() {
         break;
       case 'idle':
         // If voiceState becomes idle, stop any active audio/speech synthesis
-        if (currentAudioRef.current) {
-          if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-          }
-          if (currentAudioRef.current instanceof HTMLAudioElement) {
-            currentAudioRef.current.pause();
-          }
-        }
+        stopAllSpeech();
         setCharacterState((prev) => {
           if (prev === 'happy' || prev === 'encourage') return prev;
           return 'idle';
@@ -179,6 +188,14 @@ export default function LearnPage() {
   useEffect(() => {
     if (!student) return;
 
+    let active = true;
+
+    // Immediately stop ongoing audio, clean up speech playback and reset states
+    stopAllSpeech();
+    setActiveCaption(null);
+    setCharacterState('idle');
+    setVoiceState('idle');
+
     async function initSession() {
       setIsTyping(true);
       setMascotText('KAI đang chuẩn bị bài học...');
@@ -186,12 +203,12 @@ export default function LearnPage() {
       const supabase = createClient();
       
       // End previous session if it exists (update duration/ended_at)
-      if (sessionId) {
+      if (sessionIdRef.current) {
         try {
           await supabase
             .from('chat_sessions')
             .update({ ended_at: new Date().toISOString() })
-            .eq('id', sessionId);
+            .eq('id', sessionIdRef.current);
         } catch (e) {}
       }
 
@@ -210,6 +227,9 @@ export default function LearnPage() {
 
         if (error) throw error;
         
+        // Guard against race conditions if subject/grade changed in the meantime
+        if (!active) return;
+
         setSessionId(newSession.id);
 
         // Create initial greetings message based on subject
@@ -233,6 +253,8 @@ export default function LearnPage() {
           is_voice: false
         });
 
+        if (!active) return;
+
         // Set messages list
         const initialMsg = {
           id: 'greeting',
@@ -252,13 +274,22 @@ export default function LearnPage() {
         playTTS(initialGreeting);
       } catch (err) {
         console.error('Session init error:', err);
-        showToast('Không thể kết nối hệ thống học tập. Bé hãy nhấn thử lại nhé!');
+        if (active) {
+          showToast('Không thể kết nối hệ thống học tập. Bé hãy nhấn thử lại nhé!');
+        }
       } finally {
-        setIsTyping(false);
+        if (active) {
+          setIsTyping(false);
+        }
       }
     }
 
     initSession();
+
+    return () => {
+      active = false;
+      stopAllSpeech();
+    };
   }, [student, selectedSubject, selectedGrade]);
 
   // Helper to detect correct or incorrect answers for mascot state
@@ -375,6 +406,9 @@ export default function LearnPage() {
 
   // Triggers Groq Completion API call
   const getAIResponse = async (text: string, isVoiceInput: boolean) => {
+    const querySessionId = sessionIdRef.current;
+    if (!querySessionId) return;
+
     setIsTyping(true);
     setVoiceState('processing');
     setCharacterState('thinking');
@@ -382,7 +416,7 @@ export default function LearnPage() {
     try {
       const payload = {
         messages: [...messages, { role: 'user', content: text, is_voice: isVoiceInput }],
-        sessionId,
+        sessionId: querySessionId,
         grade: selectedGrade,
         subject: selectedSubject,
         studentId: student.id,
@@ -396,9 +430,11 @@ export default function LearnPage() {
       });
 
       if (res.status === 429) {
-        showToast('KAI đang nghỉ một chút, bé đợi thử lại sau 1 phút nhé! 🐻');
-        setVoiceState('idle');
-        setCharacterState('idle');
+        if (isMountedRef.current && sessionIdRef.current === querySessionId) {
+          showToast('KAI đang nghỉ một chút, bé đợi thử lại sau 1 phút nhé! 🐻');
+          setVoiceState('idle');
+          setCharacterState('idle');
+        }
         return;
       }
 
@@ -406,6 +442,11 @@ export default function LearnPage() {
 
       const data = await res.json();
       
+      // Guard against race conditions if subject changed or component unmounted during fetch
+      if (!isMountedRef.current || sessionIdRef.current !== querySessionId) {
+        return;
+      }
+
       // Add AI bubble
       const aiMsg: ChatMessage = {
         id: `ai-${Date.now()}`,
@@ -421,11 +462,15 @@ export default function LearnPage() {
 
     } catch (err) {
       console.error(err);
-      showToast('KAI bị nghẹn giọng rồi. Bé gõ tin nhắn thử lại nhé! 🐻');
-      setVoiceState('idle');
-      setCharacterState('idle');
+      if (isMountedRef.current && sessionIdRef.current === querySessionId) {
+        showToast('KAI bị nghẹn giọng rồi. Bé gõ tin nhắn thử lại nhé! 🐻');
+        setVoiceState('idle');
+        setCharacterState('idle');
+      }
     } finally {
-      setIsTyping(false);
+      if (isMountedRef.current && sessionIdRef.current === querySessionId) {
+        setIsTyping(false);
+      }
     }
   };
 

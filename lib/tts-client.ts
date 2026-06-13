@@ -3,6 +3,25 @@
  * Handles playing speech responses from Edge TTS API or falling back to Web Speech API
  */
 
+let activeAudio: HTMLAudioElement | null = null;
+
+export function stopAllSpeech() {
+  if (typeof window !== 'undefined') {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  }
+  if (activeAudio) {
+    try {
+      activeAudio.pause();
+      activeAudio.currentTime = 0;
+    } catch (e) {
+      console.warn('Error pausing audio:', e);
+    }
+    activeAudio = null;
+  }
+}
+
 export function playFallbackBrowserTTS(
   text: string,
   onStart?: () => void,
@@ -15,7 +34,7 @@ export function playFallbackBrowserTTS(
       return;
     }
 
-    window.speechSynthesis.cancel(); // Stop any ongoing speech
+    stopAllSpeech(); // Stop any ongoing speech and active HTMLAudioElement
 
     const cleanText = stripEmojisAndMarkdown(text);
     const utterance = new SpeechSynthesisUtterance(cleanText);
@@ -53,6 +72,9 @@ export async function speakText(
   onStart?: () => void,
   onEnd?: () => void
 ): Promise<HTMLAudioElement | SpeechSynthesisUtterance | null> {
+  // Stop whatever was playing before starting new speech
+  stopAllSpeech();
+
   const cleanText = stripEmojisAndMarkdown(text);
 
   try {
@@ -68,14 +90,21 @@ export async function speakText(
     const audioUrl = URL.createObjectURL(blob);
 
     const audio = new Audio(audioUrl);
+    activeAudio = audio; // Track this audio globally
     
     audio.onended = () => {
       URL.revokeObjectURL(audioUrl);
+      if (activeAudio === audio) {
+        activeAudio = null;
+      }
       if (onEnd) onEnd();
     };
 
     audio.onerror = () => {
       URL.revokeObjectURL(audioUrl);
+      if (activeAudio === audio) {
+        activeAudio = null;
+      }
       if (onEnd) onEnd();
     };
 
