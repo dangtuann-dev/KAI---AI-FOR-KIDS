@@ -55,14 +55,14 @@ export default function KaiCharacter({ state, audioElement }: Props) {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Render eyes (Duolingo-inspired ultra-cute style with cursor tracking)
+  // Render eyes (Mascot style: vertical white ovals with blue irises)
   const renderEyes = () => {
     if (blinkState) {
       // Blinking: cute curved lines
       return (
         <>
-          <path d="M 142 130 Q 155 138 168 130" stroke="#4A4A5A" strokeWidth="6" strokeLinecap="round" fill="none" />
-          <path d="M 232 130 Q 245 138 258 130" stroke="#4A4A5A" strokeWidth="6" strokeLinecap="round" fill="none" />
+          <path d="M 142 126 Q 155 134 168 126" stroke="#1A1A24" strokeWidth="6" strokeLinecap="round" fill="none" />
+          <path d="M 232 126 Q 245 134 258 126" stroke="#1A1A24" strokeWidth="6" strokeLinecap="round" fill="none" />
         </>
       );
     }
@@ -71,8 +71,8 @@ export default function KaiCharacter({ state, audioElement }: Props) {
       // Happy curves: ^ ^
       return (
         <>
-          <path d="M 142 132 Q 155 116 168 132" stroke="#FDA4AF" strokeWidth="7" strokeLinecap="round" fill="none" />
-          <path d="M 232 132 Q 245 116 258 132" stroke="#FDA4AF" strokeWidth="7" strokeLinecap="round" fill="none" />
+          <path d="M 142 128 Q 155 112 168 128" stroke="#FFFFFF" strokeWidth="7" strokeLinecap="round" fill="none" />
+          <path d="M 232 128 Q 245 112 258 128" stroke="#FFFFFF" strokeWidth="7" strokeLinecap="round" fill="none" />
         </>
       );
     }
@@ -82,49 +82,53 @@ export default function KaiCharacter({ state, audioElement }: Props) {
       return (
         <>
           {/* Left Eye */}
-          <circle cx="155" cy="128" r="18" fill="#FFFFFF" />
-          <circle cx={151 + mouseOffset.x} cy={128 + mouseOffset.y} r="9.5" fill="#222230" />
-          <circle cx={148 + mouseOffset.x * 1.2} cy={125 + mouseOffset.y * 1.2} r="3.5" fill="#FFFFFF" />
+          <ellipse cx="155" cy="122" rx="15" ry="21" fill="#FFFFFF" />
+          <ellipse cx={151 + mouseOffset.x} cy={122 + mouseOffset.y} rx="10" ry="15" fill="#00A3E0" />
+          <ellipse cx={149 + mouseOffset.x * 1.1} cy={122 + mouseOffset.y * 1.1} rx="6" ry="10" fill="#1A1A24" />
+          <circle cx={147 + mouseOffset.x * 1.3} cy={117 + mouseOffset.y * 1.3} r="3" fill="#FFFFFF" />
           
           {/* Right Eye */}
-          <circle cx="245" cy="128" r="18" fill="#FFFFFF" />
-          <circle cx={241 + mouseOffset.x} cy={128 + mouseOffset.y} r="9.5" fill="#222230" />
-          <circle cx={238 + mouseOffset.x * 1.2} cy={125 + mouseOffset.y * 1.2} r="3.5" fill="#FFFFFF" />
+          <ellipse cx="245" cy="122" rx="15" ry="21" fill="#FFFFFF" />
+          <ellipse cx={241 + mouseOffset.x} cy={122 + mouseOffset.y} rx="10" ry="15" fill="#00A3E0" />
+          <ellipse cx={239 + mouseOffset.x * 1.1} cy={122 + mouseOffset.y * 1.1} rx="6" ry="10" fill="#1A1A24" />
+          <circle cx={237 + mouseOffset.x * 1.3} cy={117 + mouseOffset.y * 1.3} r="3" fill="#FFFFFF" />
         </>
       );
     }
 
     if (state === 'listening') {
-      // Wide attentive eyes looking slightly upwards / towards cursor
+      // Wide attentive eyes looking slightly upwards
       return (
         <>
           {/* Left Eye */}
-          <circle cx="155" cy="128" r="19" fill="#FFFFFF" />
-          <circle cx={155 + mouseOffset.x} cy={124 + mouseOffset.y} r="10" fill="#222230" />
-          <circle cx={153 + mouseOffset.x * 1.2} cy={121 + mouseOffset.y * 1.2} r="4" fill="#FFFFFF" />
+          <ellipse cx="155" cy="122" rx="16" ry="22" fill="#FFFFFF" />
+          <ellipse cx={155 + mouseOffset.x} cy={118 + mouseOffset.y} rx="11" ry="16" fill="#00A3E0" />
+          <ellipse cx={155 + mouseOffset.x * 1.1} cy={118 + mouseOffset.y * 1.1} rx="7" ry="11" fill="#1A1A24" />
+          <circle cx={153 + mouseOffset.x * 1.3} cy={112 + mouseOffset.y * 1.3} r="3.5" fill="#FFFFFF" />
           
           {/* Right Eye */}
-          <circle cx="245" cy="128" r="19" fill="#FFFFFF" />
-          <circle cx={245 + mouseOffset.x} cy={124 + mouseOffset.y} r="10" fill="#222230" />
-          <circle cx={243 + mouseOffset.x * 1.2} cy={121 + mouseOffset.y * 1.2} r="4" fill="#FFFFFF" />
+          <ellipse cx="245" cy="122" rx="16" ry="22" fill="#FFFFFF" />
+          <ellipse cx={245 + mouseOffset.x} cy={118 + mouseOffset.y} rx="11" ry="16" fill="#00A3E0" />
+          <ellipse cx={245 + mouseOffset.x * 1.1} cy={118 + mouseOffset.y * 1.1} rx="7" ry="11" fill="#1A1A24" />
+          <circle cx={243 + mouseOffset.x * 1.3} cy={112 + mouseOffset.y * 1.3} r="3.5" fill="#FFFFFF" />
         </>
       );
     }
 
-    // Default Idle: Big round glossy friendly eyes tracking cursor
+    // Default Idle: Big round mascot eyes tracking cursor
     return (
       <>
         {/* Left Eye */}
-        <circle cx="155" cy="128" r="18" fill="#FFFFFF" />
-        <circle cx={155 + mouseOffset.x} cy={128 + mouseOffset.y} r="9.5" fill="#222230" />
-        <circle cx={152 + mouseOffset.x * 1.2} cy={125 + mouseOffset.y * 1.2} r="3.5" fill="#FFFFFF" />
-        <circle cx={158 + mouseOffset.x * 0.8} cy={131 + mouseOffset.y * 0.8} r="1.5" fill="#FFFFFF" />
+        <ellipse cx="155" cy="122" rx="16" ry="22" fill="#FFFFFF" />
+        <ellipse cx={155 + mouseOffset.x} cy={122 + mouseOffset.y} rx="11" ry="16" fill="#00A3E0" />
+        <ellipse cx={155 + mouseOffset.x * 1.1} cy={122 + mouseOffset.y * 1.1} rx="7" ry="11" fill="#1A1A24" />
+        <circle cx={152 + mouseOffset.x * 1.3} cy={116 + mouseOffset.y * 1.3} r="3.5" fill="#FFFFFF" />
         
         {/* Right Eye */}
-        <circle cx="245" cy="128" r="18" fill="#FFFFFF" />
-        <circle cx={245 + mouseOffset.x} cy={128 + mouseOffset.y} r="9.5" fill="#222230" />
-        <circle cx={242 + mouseOffset.x * 1.2} cy={125 + mouseOffset.y * 1.2} r="3.5" fill="#FFFFFF" />
-        <circle cx={248 + mouseOffset.x * 0.8} cy={131 + mouseOffset.y * 0.8} r="1.5" fill="#FFFFFF" />
+        <ellipse cx="245" cy="122" rx="16" ry="22" fill="#FFFFFF" />
+        <ellipse cx={245 + mouseOffset.x} cy={122 + mouseOffset.y} rx="11" ry="16" fill="#00A3E0" />
+        <ellipse cx={245 + mouseOffset.x * 1.1} cy={122 + mouseOffset.y * 1.1} rx="7" ry="11" fill="#1A1A24" />
+        <circle cx={242 + mouseOffset.x * 1.3} cy={116 + mouseOffset.y * 1.3} r="3.5" fill="#FFFFFF" />
       </>
     );
   };
@@ -134,8 +138,8 @@ export default function KaiCharacter({ state, audioElement }: Props) {
     if (state === 'happy' || state === 'encourage') {
       return (
         <>
-          <path d="M 138 98 Q 155 92 170 100" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
-          <path d="M 230 100 Q 245 92 262 98" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
+          <path d="M 136 94 Q 155 84 170 96" stroke="#1A1A24" strokeWidth="5" strokeLinecap="round" fill="none" />
+          <path d="M 230 96 Q 245 84 264 94" stroke="#1A1A24" strokeWidth="5" strokeLinecap="round" fill="none" />
         </>
       );
     }
@@ -143,8 +147,8 @@ export default function KaiCharacter({ state, audioElement }: Props) {
     if (state === 'thinking') {
       return (
         <>
-          <path d="M 140 106 Q 155 98 168 102" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
-          <path d="M 232 102 Q 245 98 258 106" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
+          <path d="M 138 102 Q 155 92 168 96" stroke="#1A1A24" strokeWidth="5" strokeLinecap="round" fill="none" />
+          <path d="M 232 96 Q 245 92 258 102" stroke="#1A1A24" strokeWidth="5" strokeLinecap="round" fill="none" />
         </>
       );
     }
@@ -152,8 +156,8 @@ export default function KaiCharacter({ state, audioElement }: Props) {
     if (state === 'listening') {
       return (
         <>
-          <path d="M 140 96 Q 155 92 168 96" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
-          <path d="M 232 96 Q 245 92 258 96" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
+          <path d="M 138 92 Q 155 86 168 92" stroke="#1A1A24" strokeWidth="5" strokeLinecap="round" fill="none" />
+          <path d="M 232 92 Q 245 86 258 92" stroke="#1A1A24" strokeWidth="5" strokeLinecap="round" fill="none" />
         </>
       );
     }
@@ -161,8 +165,8 @@ export default function KaiCharacter({ state, audioElement }: Props) {
     // Default Idle
     return (
       <>
-        <path d="M 140 102 Q 155 98 168 102" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
-        <path d="M 232 102 Q 245 98 258 102" stroke="#4A4A5A" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <path d="M 138 98 Q 155 90 170 98" stroke="#1A1A24" strokeWidth="5" strokeLinecap="round" fill="none" />
+        <path d="M 230 98 Q 245 90 262 98" stroke="#1A1A24" strokeWidth="5" strokeLinecap="round" fill="none" />
       </>
     );
   };
@@ -176,17 +180,11 @@ export default function KaiCharacter({ state, audioElement }: Props) {
       >
         {/* === BODY & SHOULDERS === */}
         <g id="kai-body" className="kai-body origin-bottom transition-transform duration-300">
-          <path d="M 100 240 Q 200 220 300 240 L 300 280 L 100 280 Z" fill="#252530" />
+          {/* White T-Shirt Shoulders */}
+          <path d="M 100 240 Q 200 220 300 240 L 300 280 L 100 280 Z" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1" />
           
-          {/* Cute Purple Bowtie */}
-          <g id="kai-bowtie" className="transition-transform duration-300 origin-center">
-            {/* Left loop */}
-            <polygon points="176,215 192,223 176,231" fill="#8B5CF6" />
-            {/* Right loop */}
-            <polygon points="224,215 208,223 224,231" fill="#8B5CF6" />
-            {/* Center knot */}
-            <rect x="193" y="218" width="14" height="10" rx="3" fill="#6D28D9" />
-          </g>
+          {/* Collar Shadow/Neck line */}
+          <path d="M 175 224 Q 200 230 225 224" stroke="#CBD5E1" strokeWidth="3" strokeLinecap="round" fill="none" />
         </g>
 
         {/* === HEAD === */}
@@ -194,16 +192,16 @@ export default function KaiCharacter({ state, audioElement }: Props) {
           {/* Ears */}
           <g id="kai-ears" className={`kai-ears kai-ears--${earState}`}>
             {/* Left Ear */}
-            <circle cx="130" cy="85" r="22" fill="#2D2D38" />
-            <circle cx="130" cy="85" r="12" fill="#FDA4AF" />
+            <circle cx="130" cy="85" r="26" fill="#C25E14" />
+            <circle cx="130" cy="85" r="16" fill="#E8B65B" />
             
             {/* Right Ear */}
-            <circle cx="270" cy="85" r="22" fill="#2D2D38" />
-            <circle cx="270" cy="85" r="12" fill="#FDA4AF" />
+            <circle cx="270" cy="85" r="26" fill="#C25E14" />
+            <circle cx="270" cy="85" r="16" fill="#E8B65B" />
           </g>
 
-          {/* Smooth Round Head (Duolingo Style) */}
-          <rect x="120" y="75" width="160" height="150" rx="75" fill="#2D2D38" />
+          {/* Smooth Round Head (Mascot orange-brown fur) */}
+          <rect x="120" y="75" width="160" height="150" rx="75" fill="#C25E14" />
 
           {/* Eyebrows */}
           <g id="kai-eyebrows" className="transition-all duration-300">
@@ -215,23 +213,33 @@ export default function KaiCharacter({ state, audioElement }: Props) {
             {renderEyes()}
           </g>
 
-          {/* Rosy Pink Cheeks Blush */}
-          <circle cx="138" cy="158" r="8" fill="#FDA4AF" opacity="0.6" />
-          <circle cx="262" cy="158" r="8" fill="#FDA4AF" opacity="0.6" />
-
-          {/* Cream Snout */}
-          <ellipse cx="200" cy="170" rx="26" ry="18" fill="#FFFDF9" />
+          {/* Big Puffy Golden Snout */}
+          <g id="kai-snout">
+            <circle cx="176" cy="170" r="30" fill="#E8B65B" />
+            <circle cx="224" cy="170" r="30" fill="#E8B65B" />
+            <rect x="172" y="148" width="56" height="42" fill="#E8B65B" />
+            <circle cx="200" cy="186" r="18" fill="#E8B65B" />
+          </g>
           
-          {/* Cute Nose */}
-          <path d="M 192 158 C 192 154, 208 154, 208 158 C 208 163, 200 168, 200 168 C 200 168, 192 163, 192 158 Z" fill="#222230" />
+          {/* Black Nose */}
+          <ellipse cx="200" cy="146" rx="16" ry="10" fill="#1A1A24" />
+          <ellipse cx="196" cy="142" rx="4" ry="2" fill="#FFFFFF" opacity="0.6" />
 
           {/* Mouth — Lip sync target with translation scale */}
-          <g id="kai-mouth" transform="translate(40, -10) scale(0.8)">
+          <g id="kai-mouth" transform="translate(40, -6) scale(0.8)">
             <path 
               d={MOUTH_SHAPES[mouthShape]} 
-              fill="#222230" 
+              fill="#1A1A24" 
               className="transition-all duration-75" 
             />
+            {/* If mouth is open, display the cute pink tongue */}
+            {mouthShape !== 'closed' && (
+              <path 
+                d="M 185 232 Q 200 248 215 232 Q 200 236 185 232" 
+                fill="#FDA4AF" 
+                className="transition-all duration-75"
+              />
+            )}
           </g>
         </g>
       </svg>
