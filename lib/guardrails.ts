@@ -1,3 +1,5 @@
+import { Exercise } from './exerciseTypes';
+
 const HARD_BLOCK_KEYWORDS = [
   'giết', 'đánh nhau', 'dao', 'súng', 'máu', 'chết người',
   'khỏa thân', 'sex', 'ma túy', 'rượu bia',
@@ -31,3 +33,36 @@ export const HARD_BLOCK_RESPONSE =
 
 export const SOFT_FLAG_RESPONSE_SUFFIX =
   '\n\n(Nhắc nhỏ: KAI chỉ nói chuyện về học tập thôi nhé! 😊 Bé có muốn ôn bài không?)';
+
+export function validateExercise(exercise: Exercise, grade: number, subject: string): boolean {
+  if (!exercise) return false;
+  
+  // 1. Kiểm tra type hợp lệ
+  const validTypes = [
+    'multiple_choice',
+    'number_input',
+    'fill_blank',
+    'true_false',
+    'sequencing',
+    'categorize',
+    'match_pairs',
+    'label_diagram'
+  ];
+  if (!validTypes.includes(exercise.type)) return false;
+
+  // 2. Kiểm tra label_diagram chỉ dùng diagramId có sẵn
+  if (exercise.type === 'label_diagram') {
+    const validDiagramIds = ['plant_parts', 'water_cycle', 'digestive_system'];
+    if (!validDiagramIds.includes(exercise.diagramId)) return false;
+  }
+
+  // 3. Kiểm tra number_input — độ lớn số phù hợp với lớp
+  if (exercise.type === 'number_input' && subject === 'math') {
+    const gradeInt = Number(grade);
+    const maxValue = ({ 1: 100, 2: 100, 3: 1000, 4: 10000, 5: 100000 } as Record<number, number>)[gradeInt] ?? 100;
+    if (Math.abs(exercise.correctAnswer) > maxValue) return false;
+  }
+
+  return true;
+}
+

@@ -1,22 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient(true); // service role client
 
     // Fetch all database records for calculation
-    const [profilesRes, sessionsRes, messagesRes, eventsRes] = await Promise.all([
+    const [profilesRes, sessionsRes, messagesRes, eventsRes, attemptsRes] = await Promise.all([
       supabase.from('profiles').select('role'),
       supabase.from('chat_sessions').select('started_at, message_count, voice_message_count, subject, grade'),
       supabase.from('chat_messages').select('role, is_voice, content, guardrail_flagged, created_at'),
       supabase.from('feature_events').select('feature, created_at, metadata'),
+      supabase.from('exercise_attempts').select('exercise_type, is_correct'),
     ]);
 
     const profiles = profilesRes.data || [];
     const sessions = sessionsRes.data || [];
     const messages = messagesRes.data || [];
     const events = eventsRes.data || [];
+    const attempts = attemptsRes?.data || [];
 
     const totalStudents = profiles.filter((p: any) => p.role === 'student').length;
     const totalParents = profiles.filter((p: any) => p.role === 'parent').length;
@@ -105,6 +109,26 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    // Exercise attempts analysis
+    const exerciseTypeStats: Record<string, { correct: number; total: number }> = {};
+    attempts.forEach((att: any) => {
+      const type = att.exercise_type;
+      if (!type) return;
+      if (!exerciseTypeStats[type]) {
+        exerciseTypeStats[type] = { correct: 0, total: 0 };
+      }
+      exerciseTypeStats[type].total += 1;
+      if (att.is_correct) {
+        exerciseTypeStats[type].correct += 1;
+      }
+    });
+
+    const exerciseStats = Object.entries(exerciseTypeStats).map(([type, stats]) => ({
+      type,
+      count: stats.total,
+      correctRate: Math.round((stats.correct / stats.total) * 100),
+    }));
+
     return NextResponse.json({
       overview: {
         totalSessions,
@@ -119,6 +143,7 @@ export async function GET(request: NextRequest) {
       gradeUsage: gradeCounts,
       guardrailTrend: guardrailChartData,
       topQuestions,
+      exerciseStats,
     });
   } catch (error) {
     console.error('Stats error:', error);

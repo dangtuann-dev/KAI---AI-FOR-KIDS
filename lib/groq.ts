@@ -50,6 +50,38 @@ const MOCK_RESPONSES: Record<string, string[]> = {
 export function getMockChatResponse(message: string, subject: string, grade: number, studentName = 'bé'): string {
   const msg = message.toLowerCase();
   
+  // Custom response logic for practice mode triggers
+  if (msg.includes('bài tập 1') || msg.includes('multiple_choice') || msg.includes('trắc nghiệm')) {
+    return `KAI có bài tập trắc nghiệm thú vị cho bé đây! 🌟\n<exercise>\n{"type":"multiple_choice","question":"Hình nào có 3 cạnh và 3 góc hả bé?","options":["Hình vuông","Hình tròn","Hình tam giác","Hình chữ nhật"],"correctIndex":2,"emoji":"📐"}\n</exercise>`;
+  }
+  if (msg.includes('bài tập 2') || msg.includes('number_input') || msg.includes('điền số') || msg.includes('cộng trừ')) {
+    return `Thử tài tính toán điền số cùng KAI nhé! 🔢\n<exercise>\n{"type":"number_input","question":"Có 7 quả táo thêm 5 quả táo nữa thì bằng bao nhiêu quả táo?","correctAnswer":12,"visualHint":"🍎🍎🍎🍎🍎🍎🍎 + 🍎🍎🍎🍎🍎"}\n</exercise>`;
+  }
+  if (msg.includes('bài tập 3') || msg.includes('fill_blank') || msg.includes('điền từ') || msg.includes('chỗ trống')) {
+    return `Con điền từ còn thiếu vào chỗ trống nha! ✏️\n<exercise>\n{"type":"fill_blank","sentence":"Con mèo đang ___ trên chiếc ghế ấm áp.","correctAnswer":"ngồi","wordBank":["ngồi","chạy","bay","bơi"]}\n</exercise>`;
+  }
+  if (msg.includes('bài tập 4') || msg.includes('true_false') || msg.includes('đúng sai')) {
+    return `Nhận định này đúng hay sai nhỉ? Bé đoán xem! 🤔\n<exercise>\n{"type":"true_false","statement":"Cây xanh cần có ánh sáng Mặt Trời để sống và phát triển đúng không bé?","correctAnswer":true}\n</exercise>`;
+  }
+  if (msg.includes('bài tập 5') || msg.includes('sequencing') || msg.includes('sắp xếp')) {
+    return `Sắp xếp các bước sau theo đúng thứ tự nhé! 🧩\n<exercise>\n{"type":"sequencing","instruction":"Sắp xếp các bước rửa tay đúng thứ tự nhé!","items":["Lau khô tay bằng khăn sạch","Làm ướt tay bằng nước","Xoa xà phòng tạo bọt","Xả sạch xà phòng với nước"],"correctOrder":[1,2,3,0]}\n</exercise>`;
+  }
+  if (msg.includes('bài tập 6') || msg.includes('categorize') || msg.includes('phân loại')) {
+    return `Bé phân loại các vật này vào đúng nhóm nhé! 📁\n<exercise>\n{"type":"categorize","instruction":"Bé hãy phân loại các vật này vào 2 nhóm Sống và Không sống nhé!","categories":["Sống","Không sống"],"items":[{"label":"Cây bàng","categoryIndex":0,"emoji":"🌳"},{"label":"Con chó","categoryIndex":0,"emoji":"🐶"},{"label":"Hòn đá","categoryIndex":1,"emoji":"🪨"},{"label":"Cái bàn","categoryIndex":1,"emoji":"🧱"}]}\n</exercise>`;
+  }
+  if (msg.includes('bài tập 7') || msg.includes('match_pairs') || msg.includes('ghép cặp') || msg.includes('nối cặp')) {
+    return `Bé nối từ tiếng Anh với hình đúng nhé! 🔗\n<exercise>\n{"type":"match_pairs","instruction":"Nối từ tiếng Anh ở cột trái với hình tương ứng ở cột phải!","pairs":[{"left":"Apple","right":"🍎"},{"left":"Dog","right":"🐶"},{"left":"Cat","right":"🐱"}]}\n</exercise>`;
+  }
+  if (msg.includes('bài tập 8') || msg.includes('label_diagram') || msg.includes('sơ đồ') || msg.includes('nhãn sơ đồ')) {
+    return `Bé gắn tên cho các bộ phận của cây nhé! 🔬\n<exercise>\n{"type":"label_diagram","instruction":"Bé gắn tên đúng cho từng bộ phận của cây nhé!","diagramId":"plant_parts","hotspots":[{"id":"root","correctLabel":"Rễ"},{"id":"stem","correctLabel":"Thân"},{"id":"leaf","correctLabel":"Lá"},{"id":"flower","correctLabel":"Hoa"},{"id":"fruit","correctLabel":"Quả"}],"labelOptions":["Rễ","Thân","Lá","Hoa","Quả"]}\n</exercise>`;
+  }
+
+  // Trigger random exercise if student says general prompt for practice
+  if (msg.includes('bài tập') || msg.includes('luyện tập') || msg.includes('ôn bài') || msg.includes('ôn tập') || msg.includes('làm bài')) {
+    const randomType = Math.floor(Math.random() * 8) + 1;
+    return getMockChatResponse(`bài tập ${randomType}`, subject, grade, studentName);
+  }
+
   // Custom response logic for math calculations
   if (subject === 'math') {
     if (msg.includes('cộng') || msg.includes('+') || msg.includes('bằng mấy') || msg.includes('bằng bao nhiêu')) {

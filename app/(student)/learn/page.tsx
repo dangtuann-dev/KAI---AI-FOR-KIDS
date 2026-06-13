@@ -14,6 +14,9 @@ import { speakText, stopAllSpeech } from '@/lib/tts-client';
 import KaiCharacter from '@/components/character/KaiCharacter';
 import CaptionBar from '@/components/workspace/CaptionBar';
 import ChatLogDrawer from '@/components/workspace/ChatLogDrawer';
+import { Exercise, ExerciseResult } from '@/lib/exerciseTypes';
+import { ExerciseRenderer } from '@/components/exercises/ExerciseRenderer';
+import { ExerciseFeedback } from '@/components/exercises/ExerciseFeedback';
 
 interface ChatMessage {
   id: string;
@@ -52,6 +55,12 @@ export default function LearnPage() {
   const [isOffline, setIsOffline] = useState(false);
   const [showTextInput, setShowTextInput] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  
+  // Practice Mode States
+  const [activeExercise, setActiveExercise] = useState<Exercise | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackIsCorrect, setFeedbackIsCorrect] = useState(false);
+  const [lastResult, setLastResult] = useState<ExerciseResult | null>(null);
   
   const currentAudioRef = useRef<HTMLAudioElement | SpeechSynthesisUtterance | null>(null);
   const isMountedRef = useRef(true);
@@ -460,6 +469,10 @@ export default function LearnPage() {
       // Read response aloud
       await playTTS(data.content);
 
+      if (data.exercise) {
+        setActiveExercise(data.exercise);
+      }
+
     } catch (err) {
       console.error(err);
       if (isMountedRef.current && sessionIdRef.current === querySessionId) {
@@ -472,6 +485,52 @@ export default function LearnPage() {
         setIsTyping(false);
       }
     }
+  };
+
+  const handleExerciseComplete = async (result: ExerciseResult) => {
+    setFeedbackIsCorrect(result.isCorrect);
+    setShowFeedback(true);
+    setLastResult(result);
+
+    try {
+      await fetch('/api/exercise-attempt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_id: student.id,
+          session_id: sessionId,
+          subject: selectedSubject,
+          grade: selectedGrade,
+          exercise_type: result.exercise.type,
+          topic: (result.exercise as any).question || (result.exercise as any).instruction || (result.exercise as any).statement || 'Bài tập thực hành',
+          is_correct: result.isCorrect,
+          time_spent_ms: result.timeSpentMs,
+        }),
+      });
+    } catch (dbErr) {
+      console.error('Failed to log exercise attempt:', dbErr);
+    }
+  };
+
+  const handleFeedbackDone = async () => {
+    setShowFeedback(false);
+    setActiveExercise(null);
+    setCharacterState('idle');
+
+    if (!lastResult) return;
+
+    const resultText = lastResult.isCorrect 
+      ? `[KẾT QUẢ BÀI TẬP — không hiển thị cho bé] Bé đã trả lời ĐÚNG bài tập loại ${lastResult.exercise.type}. KAI hãy khen ngợi bé thật nồng nhiệt và chuyển sang bài học tiếp theo!` 
+      : `[KẾT QUẢ BÀI TẬP — không hiển thị cho bé] Bé đã trả lời SAI bài tập loại ${lastResult.exercise.type}. KAI hãy nhẹ nhàng động viên, giải thích ngắn gọn đáp án đúng, sau đó hỏi xem bé có muốn làm một bài tập tương ứng khác không.`;
+
+    const systemMsg: ChatMessage = {
+      id: `system-context-${Date.now()}`,
+      role: 'user',
+      content: resultText,
+    };
+
+    setMessages((prev) => [...prev, systemMsg]);
+    await getAIResponse(resultText, false);
   };
 
   return (
@@ -629,32 +688,72 @@ export default function LearnPage() {
         {/* KAI Character & Subtitles Stage */}
         <div className="flex-1 flex flex-col justify-center items-center p-4 min-h-0 relative w-full">
           
-          {/* Video Call Frame Container */}
-          <div className="flex-1 w-full max-w-4xl max-h-[50vh] lg:max-h-[60vh] bg-gradient-to-b from-slate-900 to-slate-950 rounded-[32px] border-4 border-slate-800 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center p-6 my-2">
-            
-            {/* Live Video Indicator */}
-            <div className="absolute top-4 left-4 flex items-center gap-2 bg-slate-900/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/50 text-white z-20 shadow-md">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-black tracking-wider uppercase font-display">TRỰC TUYẾN</span>
-            </div>
+          {activeExercise ? (
+            /* Split layout on desktop, floating bubble layout on mobile */
+            <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-8 w-full max-w-5xl my-2 min-h-0">
+              
+              {/* Mascot View (normal on desktop, floating bubble on mobile) */}
+              <div className={`${
+                isDesktop
+                  ? 'w-full max-w-sm aspect-square bg-gradient-to-b from-slate-900 to-slate-950 rounded-[32px] border-4 border-slate-800 shadow-xl relative overflow-hidden flex flex-col items-center justify-center p-4 shrink-0'
+                  : 'absolute top-18 right-4 w-28 h-28 rounded-full border-4 border-purple-400 bg-slate-950 overflow-hidden shadow-2xl z-40 transform scale-100 transition-all duration-300'
+              }`}>
+                {isDesktop && (
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-slate-900/75 backdrop-blur-md px-2 py-1 rounded-full border border-slate-700/50 text-white z-20 shadow-sm">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[8px] font-black tracking-wider uppercase font-display">TRỰC TUYẾN</span>
+                  </div>
+                )}
+                <div className="flex-1 flex items-center justify-center min-h-0 w-full relative z-10 scale-90">
+                  <KaiCharacter state={characterState} audioElement={currentAudio} />
+                </div>
+              </div>
 
-            {/* Video Call Shutter Frame Decoration (Top Right) */}
-            <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-slate-600/50" />
-            {/* Video Call Shutter Frame Decoration (Bottom Left) */}
-            <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-slate-600/50" />
-            {/* Video Call Shutter Frame Decoration (Bottom Right) */}
-            <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-slate-600/50" />
-
-            {/* Mascot Stage */}
-            <div className="flex-1 flex items-center justify-center min-h-0 w-full relative z-10">
-              <KaiCharacter state={characterState} audioElement={currentAudio} />
+              {/* Exercise Box */}
+              <div className="flex-1 w-full max-w-md flex items-center justify-center z-30 min-h-0 relative">
+                <ExerciseRenderer
+                  exercise={activeExercise}
+                  onComplete={handleExerciseComplete}
+                />
+                
+                {/* Feedback overlay */}
+                {showFeedback && (
+                  <ExerciseFeedback
+                    isCorrect={feedbackIsCorrect}
+                    onCharacterState={setCharacterState}
+                    onDone={handleFeedbackDone}
+                  />
+                )}
+              </div>
             </div>
+          ) : (
+            /* Video Call Frame Container */
+            <div className="flex-1 w-full max-w-4xl max-h-[50vh] lg:max-h-[60vh] bg-gradient-to-b from-slate-900 to-slate-950 rounded-[32px] border-4 border-slate-800 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center p-6 my-2">
+              
+              {/* Live Video Indicator */}
+              <div className="absolute top-4 left-4 flex items-center gap-2 bg-slate-900/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/50 text-white z-20 shadow-md">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-black tracking-wider uppercase font-display">TRỰC TUYẾN</span>
+              </div>
 
-            {/* Subject/Topic water-mark on bottom corner of video feed */}
-            <div className="absolute bottom-4 left-6 bg-slate-900/60 backdrop-blur-md px-3 py-1 rounded-xl text-slate-300 text-[10px] font-bold uppercase tracking-widest z-15 border border-slate-700/30">
-              {getSubjectsForGrade(selectedGrade).find(s => s.id === selectedSubject)?.name || 'KAI'} Feed
+              {/* Video Call Shutter Frame Decoration (Top Right) */}
+              <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-slate-600/50" />
+              {/* Video Call Shutter Frame Decoration (Bottom Left) */}
+              <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-slate-600/50" />
+              {/* Video Call Shutter Frame Decoration (Bottom Right) */}
+              <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-slate-600/50" />
+
+              {/* Mascot Stage */}
+              <div className="flex-1 flex items-center justify-center min-h-0 w-full relative z-10">
+                <KaiCharacter state={characterState} audioElement={currentAudio} />
+              </div>
+
+              {/* Subject/Topic water-mark on bottom corner of video feed */}
+              <div className="absolute bottom-4 left-6 bg-slate-900/60 backdrop-blur-md px-3 py-1 rounded-xl text-slate-300 text-[10px] font-bold uppercase tracking-widest z-15 border border-slate-700/30">
+                {getSubjectsForGrade(selectedGrade).find(s => s.id === selectedSubject)?.name || 'KAI'} Feed
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Subtitle Caption Stage */}
           <div className="w-full max-w-[720px] min-h-[96px] flex items-center justify-center py-2 shrink-0">
@@ -737,7 +836,7 @@ export default function LearnPage() {
       <ChatLogDrawer
         open={chatLogOpen}
         onClose={() => setChatLogOpen(false)}
-        messages={messages}
+        messages={messages.filter(m => !m.content.startsWith('[KẾT QUẢ BÀI TẬP'))}
         isTyping={isTyping}
       />
     </div>

@@ -21,6 +21,7 @@ export default function ParentDashboard() {
     streakDays: 0,
     topSubject: 'math',
   });
+  const [reportData, setReportData] = useState<any>({ strengths: [], needsImprovement: [] });
   
   const [weeklyHistory, setWeeklyHistory] = useState<{ day: string; minutes: number }[]>([]);
   const [chatSessions, setChatSessions] = useState<any[]>([]);
@@ -97,6 +98,15 @@ export default function ParentDashboard() {
     async function loadChildStats() {
       const supabase = createClient();
       
+      // Fetch topic report
+      try {
+        const reportRes = await fetch(`/api/parent/report?student_id=${selectedChildId}`);
+        const reportJson = await reportRes.json();
+        setReportData(reportJson);
+      } catch (err) {
+        console.error('Error fetching parent report:', err);
+      }
+
       // Fetch child sessions
       const { data: sessions } = await supabase
         .from('chat_sessions')
@@ -357,6 +367,7 @@ export default function ParentDashboard() {
             grade={selectedChild?.grade || 3}
             stats={childStats}
             weeklyHistory={weeklyHistory}
+            reportData={reportData}
           />
         )}
       </div>

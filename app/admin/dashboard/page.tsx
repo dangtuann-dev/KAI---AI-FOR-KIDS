@@ -116,8 +116,8 @@ export default function AdminDashboard() {
       {/* 3. Questions and Timeline Grid */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 w-full items-start">
         
-        {/* Top popular student questions */}
-        <div className="md:col-span-5 w-full">
+        {/* Top popular student questions & Exercise Stats */}
+        <div className="md:col-span-5 w-full flex flex-col gap-6">
           {stats && stats.topQuestions && stats.topQuestions.length > 0 && (
             <div className="p-4 bg-white border border-slate-100 rounded-3xl shadow-sm flex flex-col gap-3 w-full">
               <div className="flex items-center gap-1.5">
@@ -137,6 +137,40 @@ export default function AdminDashboard() {
                     <span className="bg-purple-100 text-purple-700 font-extrabold px-2 py-0.5 rounded-full text-[10px] shrink-0">
                       {q.count} lần hỏi
                     </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {stats && stats.exerciseStats && stats.exerciseStats.length > 0 && (
+            <div className="p-4 bg-white border border-slate-100 rounded-3xl shadow-sm flex flex-col gap-3 w-full">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-purple-500" />
+                <h3 className="font-extrabold text-slate-800 text-sm font-display">
+                  Thống kê bài tập thực hành
+                </h3>
+              </div>
+              <div className="flex flex-col gap-2">
+                {stats.exerciseStats.map((item: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-600 gap-2">
+                    <span className="truncate pr-4 flex-1 flex items-center gap-1.5 capitalize">
+                      {item.type.replace(/_/g, ' ')}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[9px] font-bold">
+                        {item.count} lượt
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
+                        item.correctRate >= 75
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : item.correctRate >= 50
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-rose-100 text-rose-700'
+                      }`}>
+                        {item.correctRate}% đúng
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>

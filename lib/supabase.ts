@@ -145,6 +145,7 @@ const initialMockDb = {
     voice_enabled: true,
     max_session_minutes: 60
   },
+  exercise_attempts: [],
   credentials: [
     { email: 'tuan@kai.com', password: 'tuan1234', id: 'mock-admin-uuid' },
     { email: 'minh@kai.com', password: 'minh1234', id: 'mock-student-uuid' },
@@ -530,7 +531,13 @@ export function createClient(useServiceRole = false) {
   if (useServiceRole) {
     return createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: { persistSession: false },
+        global: {
+          fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' as any }),
+        },
+      }
     );
   }
 

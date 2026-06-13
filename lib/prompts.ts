@@ -44,15 +44,73 @@ Việt Nam áp dụng chủ trương "một chương trình, nhiều bộ sách"
 - KHÔNG dùng markdown phức tạp (bảng, code block)
 `;
 
+import { CURRICULUM_TOPICS } from './curriculumTopics';
+
+export const PRACTICE_MODE_PROMPT = `
+=== CHẾ ĐỘ THỰC HÀNH (PRACTICE MODE) ===
+Khi bé yêu cầu luyện tập/ôn bài, HOẶC sau khi bạn giải thích xong một khái
+niệm và muốn kiểm tra hiểu bài, hãy CHỦ ĐỘNG tạo 1 bài tập tương tác.
+
+ĐỊNH DẠNG BẮT BUỘC:
+[Câu nói giới thiệu ngắn — sẽ được đọc thành giọng nói, KHÔNG lặp lại nội
+dung bài tập vì bài tập đã hiển thị trực quan cho bé]
+<exercise>
+{JSON theo đúng 1 trong 8 schema dưới đây}
+</exercise>
+
+QUY TẮC:
+1. CHỈ 1 exercise mỗi lượt trả lời
+2. JSON phải hợp lệ (valid JSON), đúng field name, đúng kiểu dữ liệu
+3. Độ khó PHẢI khớp với CHỦ ĐỀ THEO LỚP (xem context được inject)
+4. KHÔNG tạo exercise nếu bé chỉ đang hỏi han, tâm sự, hoặc câu hỏi mở
+5. Câu giới thiệu PHẢI ngắn (1 câu), vui vẻ, VD: "Mình thử bài này nhé! 🌟"
+
+=== 8 LOẠI EXERCISE ===
+
+1. multiple_choice — Chọn 1 đáp án đúng
+{"type":"multiple_choice","question":"...","options":["A","B","C","D"],"correctIndex":0,"emoji":"🐱"}
+
+2. number_input — Điền số (Toán: cộng trừ nhân chia)
+{"type":"number_input","question":"7 + 5 = ?","correctAnswer":12,"visualHint":"🍎🍎🍎🍎🍎🍎🍎 + 🍎🍎🍎🍎🍎"}
+
+3. fill_blank — Điền từ vào chỗ trống (Tiếng Việt/Anh)
+{"type":"fill_blank","sentence":"Con mèo đang ___ trên ghế.","correctAnswer":"ngồi","wordBank":["ngồi","chạy","bay","bơi"]}
+
+4. true_false — Đúng/Sai (Đạo đức, Khoa học)
+{"type":"true_false","statement":"Cây xanh cần ánh sáng để sống.","correctAnswer":true}
+
+5. sequencing — Sắp xếp thứ tự (Tin học, Lịch sử, quy trình)
+{"type":"sequencing","instruction":"Sắp xếp các bước rửa tay đúng thứ tự","items":["Lau khô tay","Xả nước","Xoa xà phòng","Rửa sạch xà phòng"],"correctOrder":[1,2,3,0]}
+
+6. categorize — Phân loại vào 2 nhóm (Khoa học/TN&XH)
+{"type":"categorize","instruction":"Phân loại vào 2 nhóm","categories":["Sống","Không sống"],"items":[{"label":"Cây xanh","categoryIndex":0,"emoji":"🌳"},{"label":"Hòn đá","categoryIndex":1,"emoji":"🪨"}]}
+
+7. match_pairs — Ghép cặp (Tiếng Anh vocabulary, Toán đơn vị)
+{"type":"match_pairs","instruction":"Nối từ tiếng Anh với hình đúng","pairs":[{"left":"Apple","right":"🍎"},{"left":"Dog","right":"🐶"}]}
+
+8. label_diagram — Gắn nhãn vào sơ đồ (Khoa học STEM)
+{"type":"label_diagram","instruction":"Gắn tên đúng cho từng bộ phận của cây","diagramId":"plant_parts","hotspots":[{"id":"root","correctLabel":"Rễ"},{"id":"stem","correctLabel":"Thân"},{"id":"leaf","correctLabel":"Lá"}],"labelOptions":["Rễ","Thân","Lá","Hoa"]}
+
+LƯU Ý cho "label_diagram": diagramId phải là 1 trong các giá trị có sẵn
+(xem DIAGRAM_LIBRARY trong context: 'plant_parts', 'water_cycle', 'digestive_system') — KHÔNG tự tạo diagramId mới.
+`;
+
 export function buildContextualPrompt(grade: number, subject: string, studentName?: string): string {
+  const curriculumSubjectKey = subject === 'history' ? 'history_geo' : subject;
+  const topics = CURRICULUM_TOPICS[curriculumSubjectKey]?.[grade] ?? [];
+  
   return `${KAI_SYSTEM_PROMPT}
+
+${PRACTICE_MODE_PROMPT}
 
 === HỒ SƠ HỌC SINH ===
 Tên: ${studentName || 'bé'}
 Lớp: ${grade}
 Môn đang học: ${getSubjectName(subject)}
 
-Hãy điều chỉnh độ khó bài giảng phù hợp với học sinh lớp ${grade}.`;
+=== CHỦ ĐỀ THEO LỚP (chỉ tạo exercise trong phạm vi này) ===
+${topics.map(t => `- ${t}`).join('\n')}
+`;
 }
 
 export function getSubjectName(subject: string): string {
@@ -63,6 +121,8 @@ export function getSubjectName(subject: string): string {
     history: 'Lịch sử & Địa lý',
     ethics: 'Đạo đức',
     english: 'Tiếng Anh',
+    informatics: 'Tin học',
   };
   return map[subject] || 'Tổng hợp';
 }
+

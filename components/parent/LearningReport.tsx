@@ -13,6 +13,10 @@ interface LearningReportProps {
     topSubject: string;
   };
   weeklyHistory: { day: string; minutes: number }[];
+  reportData?: {
+    strengths: Array<{ topic: string; accuracy: number; total: number }>;
+    needsImprovement: Array<{ topic: string; accuracy: number; total: number }>;
+  };
 }
 
 export default function LearningReport({
@@ -20,6 +24,7 @@ export default function LearningReport({
   grade,
   stats,
   weeklyHistory,
+  reportData,
 }: LearningReportProps) {
   // Translate subject IDs
   const getSubjectLabel = (sub: string) => {
@@ -134,6 +139,55 @@ export default function LearningReport({
           })}
         </div>
       </div>
+
+      {/* Strengths & Weaknesses (Topic Analysis) */}
+      {reportData && (reportData.strengths.length > 0 || reportData.needsImprovement.length > 0) && (
+        <div className="flex flex-col gap-4">
+          {/* Strengths Card */}
+          {reportData.strengths.length > 0 && (
+            <div className="p-5 bg-emerald-50/50 border border-emerald-100 rounded-3xl shadow-sm flex flex-col gap-3">
+              <div className="flex items-center gap-2 text-emerald-600">
+                <span className="text-xl">🌟</span>
+                <h3 className="font-extrabold text-xs font-display uppercase tracking-wider">
+                  Điểm mạnh của con (Đúng &ge; 75%)
+                </h3>
+              </div>
+              <div className="flex flex-col gap-2">
+                {reportData.strengths.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2.5 bg-white border border-emerald-100/50 rounded-xl text-xs font-semibold text-slate-700">
+                    <span className="truncate pr-4 flex-1">{item.topic}</span>
+                    <span className="bg-emerald-100 text-emerald-700 font-extrabold px-2.5 py-0.5 rounded-full text-[10px] shrink-0">
+                      {item.accuracy}% đúng
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Needs Improvement Card */}
+          {reportData.needsImprovement.length > 0 && (
+            <div className="p-5 bg-amber-50/50 border border-amber-100 rounded-3xl shadow-sm flex flex-col gap-3">
+              <div className="flex items-center gap-2 text-amber-700">
+                <span className="text-xl">💪</span>
+                <h3 className="font-extrabold text-xs font-display uppercase tracking-wider">
+                  Chủ đề cần cố gắng thêm (Đúng &lt; 75%)
+                </h3>
+              </div>
+              <div className="flex flex-col gap-2">
+                {reportData.needsImprovement.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2.5 bg-white border border-amber-100/50 rounded-xl text-xs font-semibold text-slate-700">
+                    <span className="truncate pr-4 flex-1">{item.topic}</span>
+                    <span className="bg-amber-100 text-amber-750 font-extrabold px-2.5 py-0.5 rounded-full text-[10px] shrink-0">
+                      {item.accuracy}% đúng
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

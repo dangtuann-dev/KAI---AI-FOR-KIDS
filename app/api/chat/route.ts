@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
 import { buildContextualPrompt } from '@/lib/prompts';
-import { checkInput, HARD_BLOCK_RESPONSE } from '@/lib/guardrails';
+import { checkInput, HARD_BLOCK_RESPONSE, validateExercise } from '@/lib/guardrails';
 import { hasGroqKey, getMockChatResponse } from '@/lib/groq';
 import Groq from 'groq-sdk';
+import { parseAIResponse } from '@/lib/exerciseParser';
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -83,6 +85,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!existingMsg || existingMsg.length === 0) {
+      const isSystemContext = lastUserMessage.startsWith('[KẾT QUẢ BÀI TẬP');
       await supabase.from('chat_messages').insert({
         session_id: sessionId,
         student_id: studentId,
@@ -90,6 +93,7 @@ export async function POST(request: NextRequest) {
         content: lastUserMessage,
         is_voice: messages[messages.length - 1]?.is_voice || false,
         tokens_used: 10, // estimate
+        is_system_context: isSystemContext,
       });
     }
 
@@ -101,6 +105,13 @@ export async function POST(request: NextRequest) {
       content,
       tokens_used: tokensUsed,
     });
+
+    // Parse and validate exercise if present
+    const { caption, exercise } = parseAIResponse(content);
+    let finalExercise = null;
+    if (exercise && validateExercise(exercise, grade, subject)) {
+      finalExercise = exercise;
+    }
 
     // Update session stats
     const { data: sessionData } = await supabase
@@ -126,7 +137,7 @@ export async function POST(request: NextRequest) {
     // Log feature event
     await logFeatureEvent(studentId, 'ai_response', { subject, grade, tokens: tokensUsed });
 
-    return NextResponse.json({ content, flagged: false });
+    return NextResponse.json({ content: caption, exercise: finalExercise, flagged: false });
   } catch (error) {
     console.error('Chat error:', error);
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });
