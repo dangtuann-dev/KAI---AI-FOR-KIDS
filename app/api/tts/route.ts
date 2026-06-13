@@ -1,33 +1,32 @@
+// app/api/tts/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { synthesizeKaiVoice } from '@/lib/tts';
+
+// QUAN TRỌNG: edge-tts-universal dùng WebSocket — phải chạy Node.js runtime,
+// KHÔNG dùng Edge Runtime của Vercel
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
-  let text = '';
   try {
-    const body = await request.json();
-    text = body.text || '';
+    const { text } = await request.json();
 
-    // Option 1: FPT AI TTS (production — high quality Vietnamese voice)
-    if (process.env.FPT_AI_API_KEY && process.env.FPT_AI_API_KEY !== '') {
-      const response = await fetch('https://api.fpt.ai/hmi/tts/v5', {
-        method: 'POST',
-        headers: {
-          'api-key': process.env.FPT_AI_API_KEY,
-          'voice': 'leminh', // Northern Vietnamese young male voice, friendly and cartoon-like for kids
-          'speed': '0',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text }),
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return NextResponse.json({ audioUrl: data.async });
-      }
+    if (!text || typeof text !== 'string') {
+      return NextResponse.json({ error: 'Thiếu nội dung text' }, { status: 400 });
     }
 
-    // Option 2: Fallback — client will use browser's Web Speech API
-    return NextResponse.json({ useBrowserTTS: true, text });
+    const { audioBuffer, contentType, durationEstimateMs } = await synthesizeKaiVoice(text);
+
+    return new NextResponse(new Uint8Array(audioBuffer), {
+      status: 200,
+      headers: {
+        'Content-Type': contentType,
+        'X-Duration-Estimate-Ms': String(durationEstimateMs),
+        'Cache-Control': 'no-store',
+      },
+    });
   } catch (error) {
-    return NextResponse.json({ useBrowserTTS: true, text });
+    console.error('TTS error:', error);
+    // Trả lỗi để client fallback sang Web Speech API
+    return NextResponse.json({ error: 'TTS failed', useBrowserTTS: true }, { status: 500 });
   }
 }

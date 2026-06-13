@@ -10,7 +10,7 @@ import ProgressBadge from '@/components/kid/ProgressBadge';
 import ChatHistory from '@/components/chat/ChatHistory';
 import OwlAvatar from '@/components/chat/OwlAvatar';
 import VoiceButton, { VoiceState } from '@/components/voice/VoiceButton';
-import { speakText } from '@/lib/tts';
+import { speakText } from '@/lib/tts-client';
 import KaiCharacter from '@/components/character/KaiCharacter';
 import CaptionBar from '@/components/workspace/CaptionBar';
 import ChatLogDrawer from '@/components/workspace/ChatLogDrawer';

@@ -1,94 +1,56 @@
+import { EdgeTTS } from 'edge-tts-universal';
+
 /**
- * Text-to-Speech client-side helper
- * Handles playing speech responses from FPT AI or falling back to Web Speech API
+ * Giọng nam tiếng Việt duy nhất có sẵn trong Edge TTS — chất lượng neural,
+ * tự nhiên. Đây là giọng nền cho KAI.
  */
-export async function speakText(
-  text: string,
-  onStart?: () => void,
-  onEnd?: () => void
-): Promise<HTMLAudioElement | SpeechSynthesisUtterance | null> {
-  // Strip emojis and simple markdown from text to improve pronunciation
-  const cleanText = text
-    .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '') // strip emojis
-    .replace(/[*_~`]/g, '') // strip simple markdown characters
+export const KAI_VOICE = 'vi-VN-NamMinhNeural';
+
+/**
+ * Tinh chỉnh để tạo cảm giác "nhân vật hoạt hình" — thanh thoát, tươi trẻ:
+ * - pitch +15Hz: nâng cao độ nhẹ → giọng trẻ trung, sáng hơn (vẫn là giọng nam)
+ * - rate +8%: nói nhanh nhẹn hơn mặc định → năng động, vui nhộn
+ * - volume +0%: giữ nguyên âm lượng
+ */
+export const CARTOON_VOICE_OPTIONS = {
+  rate: '+8%',
+  pitch: '+15Hz',
+  volume: '+0%',
+};
+
+export interface TTSResult {
+  audioBuffer: Buffer;
+  contentType: string; // 'audio/mpeg'
+  durationEstimateMs: number; // ước lượng để sync caption
+}
+
+/**
+ * Chuyển văn bản thành audio bằng giọng KAI (hoạt hình, nam, thanh thoát).
+ */
+export async function synthesizeKaiVoice(text: string): Promise<TTSResult> {
+  // Loại bỏ emoji trước khi đưa vào TTS — Edge TTS có thể đọc nhịu/lỗi với emoji
+  const cleanText = stripEmojis(text);
+
+  const tts = new EdgeTTS(cleanText, KAI_VOICE, CARTOON_VOICE_OPTIONS);
+  const result = await tts.synthesize();
+
+  const audioBuffer = Buffer.from(await result.audio.arrayBuffer());
+
+  // Ước lượng thời gian phát (ms) dựa trên word boundaries trả về
+  const lastBoundary = result.subtitle?.[result.subtitle.length - 1];
+  const durationEstimateMs = lastBoundary
+    ? lastBoundary.offset + lastBoundary.duration
+    : cleanText.length * 70; // fallback: ~70ms/ký tự
+
+  return {
+    audioBuffer,
+    contentType: 'audio/mpeg',
+    durationEstimateMs,
+  };
+}
+
+function stripEmojis(text: string): string {
+  return text
+    .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '')
     .trim();
-
-  try {
-    const res = await fetch('/api/tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: cleanText })
-    });
-    const data = await res.json();
-    
-    if (data.audioUrl) {
-      const audio = new Audio(data.audioUrl);
-      if (onStart) audio.onplay = onStart;
-      if (onEnd) audio.onended = onEnd;
-      await audio.play();
-      return audio;
-    }
-  } catch (error) {
-    console.error('API TTS error, falling back to browser Web Speech API:', error);
-  }
-
-  // Fallback: Web Speech API (Browser TTS)
-  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-    window.speechSynthesis.cancel(); // Stop any ongoing speech
-    
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    
-    // Try to find a male Vietnamese voice first (e.g., NamMinh or any male-related name)
-    let voices = window.speechSynthesis.getVoices();
-    let viVoice = voices.find(v => {
-      const name = v.name.toLowerCase();
-      const lang = v.lang.toLowerCase();
-      return lang.includes('vi') && (name.includes('nam') || name.includes('minh') || name.includes('male') || name.includes('boy'));
-    });
-    
-    // Fallback to any Vietnamese voice if no male voice is found
-    if (!viVoice) {
-      viVoice = voices.find(v => v.lang.toLowerCase().includes('vi'));
-    }
-    
-    if (!viVoice) {
-      // Chrome/Safari voices are sometimes loaded asynchronously
-      await new Promise<void>((resolve) => {
-        const tempHandler = () => {
-          voices = window.speechSynthesis.getVoices();
-          viVoice = voices.find(v => {
-            const name = v.name.toLowerCase();
-            const lang = v.lang.toLowerCase();
-            return lang.includes('vi') && (name.includes('nam') || name.includes('minh') || name.includes('male') || name.includes('boy'));
-          });
-          if (!viVoice) {
-            viVoice = voices.find(v => v.lang.toLowerCase().includes('vi'));
-          }
-          window.speechSynthesis.onvoiceschanged = null;
-          resolve();
-        };
-        window.speechSynthesis.onvoiceschanged = tempHandler;
-        // Timeout in case it never fires
-        setTimeout(resolve, 500);
-      });
-    }
-
-    if (viVoice) {
-      utterance.voice = viVoice;
-    }
-    
-    utterance.lang = 'vi-VN';
-    utterance.rate = 1.15; // Energetic, fast-paced cartoon tone
-    utterance.pitch = 1.35; // Shifted pitch to make a male voice sound like a young cartoon boy/mascot
-    
-    if (onStart) utterance.onstart = onStart;
-    if (onEnd) utterance.onend = onEnd;
-    
-    window.speechSynthesis.speak(utterance);
-    return utterance;
-  }
-  
-  // If speech is not supported, just trigger end immediately
-  if (onEnd) onEnd();
-  return null;
 }

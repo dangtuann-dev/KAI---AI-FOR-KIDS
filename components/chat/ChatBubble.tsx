@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Volume2, Mic } from 'lucide-react';
-import { speakText } from '@/lib/tts';
+import { speakText } from '@/lib/tts-client';
 
 interface ChatMessage {
   id: string;
