@@ -11,6 +11,9 @@ import ChatHistory from '@/components/chat/ChatHistory';
 import OwlAvatar from '@/components/chat/OwlAvatar';
 import VoiceButton, { VoiceState } from '@/components/voice/VoiceButton';
 import { speakText } from '@/lib/tts';
+import KaiCharacter from '@/components/character/KaiCharacter';
+import CaptionBar from '@/components/workspace/CaptionBar';
+import ChatLogDrawer from '@/components/workspace/ChatLogDrawer';
 
 interface ChatMessage {
   id: string;
@@ -38,6 +41,12 @@ export default function LearnPage() {
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const [mascotText, setMascotText] = useState('Đang khởi động KAI...');
   
+  // Character & Subtitle States
+  const [characterState, setCharacterState] = useState<'idle' | 'listening' | 'thinking' | 'speaking' | 'happy' | 'encourage'>('idle');
+  const [activeCaption, setActiveCaption] = useState<{ speaker: 'user' | 'kai'; text: string } | null>(null);
+  const [chatLogOpen, setChatLogOpen] = useState(false);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  
   // UI helper states
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'error' | 'warning' | 'success' } | null>(null);
   const [isOffline, setIsOffline] = useState(false);
@@ -53,6 +62,27 @@ export default function LearnPage() {
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  // Synchronize characterState with voiceState changes from VoiceButton
+  useEffect(() => {
+    switch (voiceState) {
+      case 'recording':
+        setCharacterState('listening');
+        break;
+      case 'processing':
+        setCharacterState('thinking');
+        break;
+      case 'playing':
+        setCharacterState('speaking');
+        break;
+      case 'idle':
+        setCharacterState((prev) => {
+          if (prev === 'happy' || prev === 'encourage') return prev;
+          return 'idle';
+        });
+        break;
+    }
+  }, [voiceState]);
 
   // Trigger custom toast notification
   const showToast = (text: string, type: 'error' | 'warning' | 'success' = 'error') => {
@@ -71,7 +101,7 @@ export default function LearnPage() {
     
     const handleOffline = () => {
       setIsOffline(true);
-      showToast('Mất kết nối rồi! KAI đang chờ bé quay lại 🦉', 'warning');
+      showToast('Mất kết nối rồi! KAI đang chờ bé quay lại 🐻', 'warning');
     };
 
     window.addEventListener('online', handleOnline);
@@ -213,29 +243,67 @@ export default function LearnPage() {
     initSession();
   }, [student, selectedSubject, selectedGrade]);
 
+  // Helper to detect correct or incorrect answers for mascot state
+  const detectEncouragement = (text: string): 'happy' | 'encourage' | null => {
+    const lowercase = text.toLowerCase();
+    const happyPatterns = ['đúng rồi', 'giỏi quá', 'xuất sắc', 'tuyệt vời', 'chính xác', 'tuyệt cú mèo'];
+    const encouragePatterns = ['gần đúng', 'thử lại', 'cố lên', 'suy nghĩ thêm'];
+    
+    if (happyPatterns.some(p => lowercase.includes(p))) return 'happy';
+    if (encouragePatterns.some(p => lowercase.includes(p))) return 'encourage';
+    return null;
+  };
+
   // Handle playing TTS text and syncing mascot speaking state
   const playTTS = async (text: string) => {
     setVoiceState('playing');
+    setCharacterState('speaking');
+    setActiveCaption({ speaker: 'kai', text });
     
     // Stop any current audio
     if (currentAudioRef.current) {
-      if ('cancel' in window.speechSynthesis) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-      } else if ('pause' in currentAudioRef.current) {
-        (currentAudioRef.current as HTMLAudioElement).pause();
+      }
+      if (currentAudioRef.current instanceof HTMLAudioElement) {
+        currentAudioRef.current.pause();
       }
     }
 
     try {
       const audioObj = await speakText(
         text,
-        () => setVoiceState('playing'),
-        () => setVoiceState('idle')
+        () => {
+          setVoiceState('playing');
+          setCharacterState('speaking');
+        },
+        () => {
+          const encouragement = detectEncouragement(text);
+          if (encouragement) {
+            setCharacterState(encouragement);
+            setTimeout(() => {
+              setCharacterState('idle');
+              setActiveCaption(null);
+            }, 2000);
+          } else {
+            setCharacterState('idle');
+            setActiveCaption(null);
+          }
+          setVoiceState('idle');
+          setCurrentAudio(null);
+        }
       );
+      
       currentAudioRef.current = audioObj;
+      if (audioObj instanceof HTMLAudioElement) {
+        setCurrentAudio(audioObj);
+      } else {
+        setCurrentAudio(null);
+      }
     } catch (e) {
       console.error(e);
       setVoiceState('idle');
+      setCharacterState('idle');
     }
   };
 
@@ -273,6 +341,7 @@ export default function LearnPage() {
     };
     
     setMessages((prev) => [...prev, userMsg]);
+    setActiveCaption({ speaker: 'user', text: userText });
     await getAIResponse(userText, false);
   };
 
@@ -285,12 +354,14 @@ export default function LearnPage() {
       is_voice: true,
     };
     setMessages((prev) => [...prev, userMsg]);
+    setActiveCaption({ speaker: 'user', text });
   };
 
   // Triggers Groq Completion API call
   const getAIResponse = async (text: string, isVoiceInput: boolean) => {
     setIsTyping(true);
     setVoiceState('processing');
+    setCharacterState('thinking');
     
     try {
       const payload = {
@@ -309,8 +380,9 @@ export default function LearnPage() {
       });
 
       if (res.status === 429) {
-        showToast('KAI đang nghỉ một chút, bé đợi thử lại sau 1 phút nhé! 🦉');
+        showToast('KAI đang nghỉ một chút, bé đợi thử lại sau 1 phút nhé! 🐻');
         setVoiceState('idle');
+        setCharacterState('idle');
         return;
       }
 
@@ -333,8 +405,9 @@ export default function LearnPage() {
 
     } catch (err) {
       console.error(err);
-      showToast('KAI bị nghẹn giọng rồi. Bé gõ tin nhắn thử lại nhé! 🦉');
+      showToast('KAI bị nghẹn giọng rồi. Bé gõ tin nhắn thử lại nhé! 🐻');
       setVoiceState('idle');
+      setCharacterState('idle');
     } finally {
       setIsTyping(false);
     }
@@ -410,8 +483,8 @@ export default function LearnPage() {
         </div>
       </aside>
 
-      {/* Main chat column */}
-      <main className="flex-1 flex flex-col h-full bg-slate-50/50 min-w-0">
+      {/* Main workspace column */}
+      <main className="flex-1 flex flex-col h-full bg-gradient-to-b from-[#F8F7FF] to-[#EEF0FF] min-w-0 relative">
         {/* Mobile Header (Hidden on Desktop) */}
         <header className="h-14 px-4 bg-white border-b border-purple-100 flex items-center justify-between shrink-0 shadow-sm z-10 lg:hidden">
           <button
@@ -428,10 +501,38 @@ export default function LearnPage() {
             {isOffline && <WifiOff className="w-4 h-4 text-rose-500 animate-pulse" />}
           </span>
 
-          <GradeSelector
-            selectedGrade={selectedGrade}
-            onSelectGrade={setSelectedGrade}
-          />
+          <div className="flex items-center gap-2">
+            <GradeSelector
+              selectedGrade={selectedGrade}
+              onSelectGrade={setSelectedGrade}
+            />
+            <button
+              onClick={() => setChatLogOpen(true)}
+              className="p-2 bg-purple-50 hover:bg-purple-100 text-[#6C63FF] rounded-full transition-all border border-purple-100/50 active:scale-95 text-lg"
+              title="Nhật ký bài học"
+            >
+              📜
+            </button>
+          </div>
+        </header>
+
+        {/* Desktop Header (Hidden on Mobile) */}
+        <header className="hidden lg:flex h-14 px-6 bg-white border-b border-slate-100 items-center justify-between shrink-0 z-10">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-bold text-slate-500 font-display">
+              {mascotText}
+            </span>
+          </div>
+
+          <button
+            onClick={() => setChatLogOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 text-[#6C63FF] font-bold font-display text-sm rounded-2xl transition-all border border-purple-100/50 active:scale-95"
+            title="Nhật ký bài học"
+          >
+            <span>Nhật ký bài học</span>
+            <span>📜</span>
+          </button>
         </header>
 
         {/* Mobile Horizontal Subject Bar (Hidden on Desktop) */}
@@ -450,23 +551,24 @@ export default function LearnPage() {
           />
         </div>
 
-        {/* Mobile Hero Mascot Section (Hidden on Desktop) */}
-        <div className="bg-white border-b border-purple-50 shrink-0 py-1.5 flex justify-center shadow-inner lg:hidden">
-          <OwlAvatar
-            state={voiceState === 'playing' ? 'speaking' : voiceState === 'recording' ? 'listening' : 'idle'}
-            text={mascotText}
-          />
-        </div>
+        {/* KAI Character & Subtitles Stage */}
+        <div className="flex-1 flex flex-col justify-center items-center p-4 min-h-0 relative">
+          
+          {/* Mascot Stage */}
+          <div className="flex-1 flex items-center justify-center min-h-0 w-full">
+            <KaiCharacter state={characterState} audioElement={currentAudio} />
+          </div>
 
-        {/* Chat Messages - centered with max-width on desktop */}
-        <div className="flex-1 overflow-hidden relative w-full flex justify-center">
-          <div className="w-full max-w-[720px] h-full">
-            <ChatHistory
-              messages={messages}
-              isTyping={isTyping}
-              onSpeakStart={() => setVoiceState('playing')}
-              onSpeakEnd={() => setVoiceState('idle')}
-            />
+          {/* Subtitle Caption Stage */}
+          <div className="w-full max-w-[720px] min-h-[96px] flex items-center justify-center py-2 shrink-0">
+            {activeCaption && (
+              <CaptionBar
+                speaker={activeCaption.speaker}
+                text={activeCaption.text}
+                isActive={true}
+                audioDuration={currentAudio?.duration ? currentAudio.duration * 1000 : undefined}
+              />
+            )}
           </div>
         </div>
 
@@ -533,6 +635,14 @@ export default function LearnPage() {
           </div>
         </footer>
       </main>
+
+      {/* Drawer for full chat log history */}
+      <ChatLogDrawer
+        open={chatLogOpen}
+        onClose={() => setChatLogOpen(false)}
+        messages={messages}
+        isTyping={isTyping}
+      />
     </div>
   );
 }

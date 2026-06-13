@@ -47,7 +47,7 @@ export default function ChatHistory({
       {messages.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-slate-400 p-8 text-center">
           <p className="font-display font-semibold text-lg text-slate-500 mb-1">
-            Chào mừng bé đến với KAI! 🦉
+            Chào mừng bé đến với KAI! 🐻
           </p>
           <p className="text-sm">
             Nhấn giữ nút mic lớn màu tím ở dưới rồi nói chuyện với KAI hoặc gõ tin nhắn vào ô nhé!

@@ -84,7 +84,7 @@ export default function RegisterPage() {
           state="idle"
           text={
             isStudent
-              ? 'Tạo tài khoản mới để tham gia cùng KAI nha! 🦉'
+              ? 'Tạo tài khoản mới để tham gia cùng KAI nha! 🐻'
               : 'Đăng ký tài khoản phụ huynh để đồng hành cùng con.'
           }
         />

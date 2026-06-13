@@ -153,7 +153,7 @@ function LoginContent() {
               state={mascotState}
               text={
                 role === 'student'
-                  ? 'Chào bé! Đăng nhập để học cùng KAI nhé! 🦉'
+                  ? 'Chào bé! Đăng nhập để học cùng KAI nhé! 🐻'
                   : role === 'parent'
                   ? 'Chào Phụ huynh! Xem báo cáo học tập của con.'
                   : 'Trang Quản lý hệ thống KAI Learning.'

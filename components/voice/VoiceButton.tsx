@@ -129,7 +129,7 @@ export default function VoiceButton({
       const { text } = await res.json();
       
       if (!text || text.trim() === '') {
-        onError('KAI chưa nghe rõ lắm. Bé thử nói lại xem sao nhé! 🦉');
+        onError('KAI chưa nghe rõ lắm. Bé thử nói lại xem sao nhé! 🐻');
         onChangeState('idle');
         return;
       }
@@ -139,7 +139,7 @@ export default function VoiceButton({
 
     } catch (err) {
       console.error('Voice processing pipeline error:', err);
-      onError('Có lỗi xảy ra khi truyền âm thanh. Bé thử lại nhé! 🦉');
+      onError('Có lỗi xảy ra khi truyền âm thanh. Bé thử lại nhé! 🐻');
       onChangeState('idle');
     }
   };
