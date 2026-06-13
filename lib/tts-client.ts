@@ -4,8 +4,10 @@
  */
 
 let activeAudio: HTMLAudioElement | null = null;
+let currentSpeechId = 0;
 
 export function stopAllSpeech() {
+  currentSpeechId++; // Invalidate any running/pending speech fetches
   if (typeof window !== 'undefined') {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -25,8 +27,15 @@ export function stopAllSpeech() {
 export function playFallbackBrowserTTS(
   text: string,
   onStart?: () => void,
-  onEnd?: () => void
+  onEnd?: () => void,
+  existingSpeechId?: number
 ): Promise<SpeechSynthesisUtterance | null> {
+  if (existingSpeechId === undefined) {
+    stopAllSpeech();
+  }
+  
+  const speechId = existingSpeechId !== undefined ? existingSpeechId : ++currentSpeechId;
+
   return new Promise((resolve) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       if (onEnd) onEnd();
@@ -34,7 +43,9 @@ export function playFallbackBrowserTTS(
       return;
     }
 
-    stopAllSpeech(); // Stop any ongoing speech and active HTMLAudioElement
+    if (existingSpeechId === undefined) {
+      window.speechSynthesis.cancel(); // Stop any ongoing speech
+    }
 
     const cleanText = stripEmojisAndMarkdown(text);
     const utterance = new SpeechSynthesisUtterance(cleanText);
@@ -63,6 +74,12 @@ export function playFallbackBrowserTTS(
       resolve(utterance);
     };
 
+    // Double check if this request is still active
+    if (speechId !== currentSpeechId) {
+      resolve(null);
+      return;
+    }
+
     window.speechSynthesis.speak(utterance);
   });
 }
@@ -74,6 +91,8 @@ export async function speakText(
 ): Promise<HTMLAudioElement | SpeechSynthesisUtterance | null> {
   // Stop whatever was playing before starting new speech
   stopAllSpeech();
+  
+  const speechId = ++currentSpeechId;
 
   const cleanText = stripEmojisAndMarkdown(text);
 
@@ -86,8 +105,18 @@ export async function speakText(
 
     if (!res.ok) throw new Error('Edge TTS request failed');
 
+    // Abort if a newer speech request has been initialized
+    if (speechId !== currentSpeechId) {
+      return null;
+    }
+
     const blob = await res.blob();
     const audioUrl = URL.createObjectURL(blob);
+
+    if (speechId !== currentSpeechId) {
+      URL.revokeObjectURL(audioUrl);
+      return null;
+    }
 
     const audio = new Audio(audioUrl);
     activeAudio = audio; // Track this audio globally
@@ -112,11 +141,23 @@ export async function speakText(
       audio.onplay = onStart;
     }
 
+    // Final guard before trigger
+    if (speechId !== currentSpeechId) {
+      URL.revokeObjectURL(audioUrl);
+      if (activeAudio === audio) {
+        activeAudio = null;
+      }
+      return null;
+    }
+
     await audio.play();
     return audio;
   } catch (err) {
     console.warn('Edge TTS lỗi, fallback sang Web Speech API:', err);
-    return playFallbackBrowserTTS(text, onStart, onEnd);
+    if (speechId === currentSpeechId) {
+      return playFallbackBrowserTTS(text, onStart, onEnd, speechId);
+    }
+    return null;
   }
 }
 
