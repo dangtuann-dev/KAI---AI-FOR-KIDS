@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
           model: 'whisper-large-v3-turbo',
           language: 'vi', // Vietnamese
           response_format: 'text',
+          prompt: 'KAI ơi, toán học, tiếng việt, một cộng một bằng mấy, chào bạn gấu KAI, giúp em giải bài này, chữ này viết sao, học tập, khoa học',
         });
 
         return NextResponse.json({ text: transcription });

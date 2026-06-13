@@ -27,8 +27,19 @@ export default function VoiceButton({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Clean up recording state on unmount
+  // Clean up recording state on unmount and pre-warm microphone permission cache
   useEffect(() => {
+    async function preWarmMicrophone() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+      } catch (err) {
+        console.warn('Pre-warming microphone failed (permission not granted yet):', err);
+      }
+    }
+    
+    preWarmMicrophone();
+
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (streamRef.current) {
@@ -90,9 +101,12 @@ export default function VoiceButton({
       timeoutRef.current = null;
     }
 
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
-    }
+    // Add 400ms grace period to capture trailing speech and prevent truncation
+    setTimeout(() => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+    }, 400);
   };
 
   const handleRecordingStop = async () => {
