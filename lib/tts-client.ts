@@ -24,8 +24,8 @@ export function playFallbackBrowserTTS(
     utterance.pitch = 1.2;   // cao hơn mặc định — gần với cartoon voice
 
     // Ưu tiên chọn giọng nam tiếng Việt nếu trình duyệt có sẵn
-    let voices = window.speechSynthesis.getVoices();
-    let viVoice = voices.find(v => v.lang === 'vi-VN' && /nam|male/i.test(v.name))
+    const voices = window.speechSynthesis.getVoices();
+    const viVoice = voices.find(v => v.lang === 'vi-VN' && /nam|male/i.test(v.name))
       || voices.find(v => v.lang === 'vi-VN');
       
     if (viVoice) {
