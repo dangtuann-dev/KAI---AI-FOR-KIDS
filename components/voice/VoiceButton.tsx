@@ -124,7 +124,7 @@ export default function VoiceButton({
     
     if (blob.size < 1000) {
       // Audio is too short or empty
-      onError('KAI chưa nghe thấy bé nói gì cả. Bé thử nói to hơn hoặc giữ mic lâu hơn nhé!');
+      onError('Kai nghe không rõ bạn hãy nói lại');
       onChangeState('idle');
       return;
     }
@@ -143,7 +143,7 @@ export default function VoiceButton({
       const { text } = await res.json();
       
       if (!text || text.trim() === '') {
-        onError('KAI chưa nghe rõ lắm. Bé thử nói lại xem sao nhé! 🐻');
+        onError('Kai nghe không rõ bạn hãy nói lại');
         onChangeState('idle');
         return;
       }
@@ -153,7 +153,7 @@ export default function VoiceButton({
 
     } catch (err) {
       console.error('Voice processing pipeline error:', err);
-      onError('Có lỗi xảy ra khi truyền âm thanh. Bé thử lại nhé! 🐻');
+      onError('Kai nghe không rõ bạn hãy nói lại');
       onChangeState('idle');
     }
   };
