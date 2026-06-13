@@ -38,16 +38,32 @@ export async function speakText(
     
     const utterance = new SpeechSynthesisUtterance(cleanText);
     
-    // Find Vietnamese voice (lang="vi-VN")
+    // Try to find a male Vietnamese voice first (e.g., NamMinh or any male-related name)
     let voices = window.speechSynthesis.getVoices();
-    let viVoice = voices.find(v => v.lang.toLowerCase().includes('vi'));
+    let viVoice = voices.find(v => {
+      const name = v.name.toLowerCase();
+      const lang = v.lang.toLowerCase();
+      return lang.includes('vi') && (name.includes('nam') || name.includes('minh') || name.includes('male') || name.includes('boy'));
+    });
+    
+    // Fallback to any Vietnamese voice if no male voice is found
+    if (!viVoice) {
+      viVoice = voices.find(v => v.lang.toLowerCase().includes('vi'));
+    }
     
     if (!viVoice) {
       // Chrome/Safari voices are sometimes loaded asynchronously
       await new Promise<void>((resolve) => {
         const tempHandler = () => {
           voices = window.speechSynthesis.getVoices();
-          viVoice = voices.find(v => v.lang.toLowerCase().includes('vi'));
+          viVoice = voices.find(v => {
+            const name = v.name.toLowerCase();
+            const lang = v.lang.toLowerCase();
+            return lang.includes('vi') && (name.includes('nam') || name.includes('minh') || name.includes('male') || name.includes('boy'));
+          });
+          if (!viVoice) {
+            viVoice = voices.find(v => v.lang.toLowerCase().includes('vi'));
+          }
           window.speechSynthesis.onvoiceschanged = null;
           resolve();
         };
@@ -62,8 +78,8 @@ export async function speakText(
     }
     
     utterance.lang = 'vi-VN';
-    utterance.rate = 1.15; // Energetic, fast-paced cartoon tone (avoiding sleepy rate)
-    utterance.pitch = 1.45; // High-pitched, cute cartoon character/mascot tone
+    utterance.rate = 1.15; // Energetic, fast-paced cartoon tone
+    utterance.pitch = 1.35; // Shifted pitch to make a male voice sound like a young cartoon boy/mascot
     
     if (onStart) utterance.onstart = onStart;
     if (onEnd) utterance.onend = onEnd;

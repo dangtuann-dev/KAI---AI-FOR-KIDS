@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           'api-key': process.env.FPT_AI_API_KEY,
-          'voice': 'linhsan', // Southern Vietnamese female voice, highly friendly for kids
+          'voice': 'leminh', // Northern Vietnamese young male voice, friendly and cartoon-like for kids
           'speed': '0',
           'Content-Type': 'application/json',
         },
