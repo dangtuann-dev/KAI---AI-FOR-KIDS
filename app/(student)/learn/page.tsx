@@ -76,6 +76,15 @@ export default function LearnPage() {
         setCharacterState('speaking');
         break;
       case 'idle':
+        // If voiceState becomes idle, stop any active audio/speech synthesis
+        if (currentAudioRef.current) {
+          if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+          }
+          if (currentAudioRef.current instanceof HTMLAudioElement) {
+            currentAudioRef.current.pause();
+          }
+        }
         setCharacterState((prev) => {
           if (prev === 'happy' || prev === 'encourage') return prev;
           return 'idle';
@@ -576,7 +585,7 @@ export default function LearnPage() {
         <div className="flex-1 flex flex-col justify-center items-center p-4 min-h-0 relative w-full">
           
           {/* Video Call Frame Container */}
-          <div className="flex-1 w-full max-w-4xl bg-gradient-to-b from-slate-900 to-slate-950 rounded-[32px] border-4 border-slate-800 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center p-6 my-2">
+          <div className="flex-1 w-full max-w-4xl max-h-[50vh] lg:max-h-[60vh] bg-gradient-to-b from-slate-900 to-slate-950 rounded-[32px] border-4 border-slate-800 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center p-6 my-2">
             
             {/* Live Video Indicator */}
             <div className="absolute top-4 left-4 flex items-center gap-2 bg-slate-900/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/50 text-white z-20 shadow-md">

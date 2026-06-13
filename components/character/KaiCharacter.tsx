@@ -176,7 +176,7 @@ export default function KaiCharacter({ state, audioElement }: Props) {
       <svg 
         viewBox="100 50 200 200" 
         xmlns="http://www.w3.org/2000/svg"
-        className="w-full max-w-[500px] md:max-w-[580px] lg:max-w-[620px] h-auto drop-shadow-2xl transition-all duration-300 transform hover:scale-[1.02]"
+        className="h-full w-auto max-h-full max-w-full drop-shadow-2xl transition-all duration-300 transform hover:scale-[1.02]"
       >
         {/* === BODY & SHOULDERS === */}
         <g id="kai-body" className="kai-body origin-bottom transition-transform duration-300">

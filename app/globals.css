@@ -123,6 +123,32 @@ h1, h2, h3, h4, h5, h6, .font-display {
   animation: pulse-green 1.5s infinite;
 }
 
+/* Soundwave animation for VoiceButton playing state */
+.wave-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  height: 24px;
+}
+
+.wave-bar {
+  width: 3px;
+  height: 100%;
+  background-color: white;
+  border-radius: 2px;
+  animation: bounce-wave 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes bounce-wave {
+  from {
+    height: 4px;
+  }
+  to {
+    height: 24px;
+  }
+}
+
 /* Animations */
 @keyframes pulse-red {
   0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }

@@ -22,36 +22,67 @@ export default function VoiceButton({
   onError,
   size = 'md',
 }: VoiceButtonProps) {
+  const [isVoiceModeActive, setIsVoiceModeActive] = useState(false);
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  
+  // Web Audio API refs for silence detection
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const volumeCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Clean up recording state on unmount and pre-warm microphone permission cache
+  // Keep a ref of isVoiceModeActive to prevent stale closure issues in callbacks
+  const isVoiceModeActiveRef = useRef(false);
   useEffect(() => {
-    async function preWarmMicrophone() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
-      } catch (err) {
-        console.warn('Pre-warming microphone failed (permission not granted yet):', err);
-      }
-    }
-    
-    preWarmMicrophone();
+    isVoiceModeActiveRef.current = isVoiceModeActive;
+  }, [isVoiceModeActive]);
 
+  // Clean up all audio contexts and recording streams on unmount
+  useEffect(() => {
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
+      cleanupStreamAndAudio();
     };
   }, []);
 
-  const startRecording = async (e: React.PointerEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    // Prevent starting if not idle
-    if (state !== 'idle') return;
+  // Auto-resume listening when KAI finishes speaking
+  useEffect(() => {
+    if (isVoiceModeActive && state === 'idle') {
+      const delayStart = setTimeout(() => {
+        if (isVoiceModeActiveRef.current) {
+          startRecordingCycle();
+        }
+      }, 300);
+      return () => clearTimeout(delayStart);
+    }
+  }, [state, isVoiceModeActive]);
+
+  const cleanupStreamAndAudio = () => {
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = null;
+    }
+    if (volumeCheckIntervalRef.current) {
+      clearInterval(volumeCheckIntervalRef.current);
+      volumeCheckIntervalRef.current = null;
+    }
+    if (audioContextRef.current) {
+      if (audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {});
+      }
+      audioContextRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    analyserRef.current = null;
+  };
+
+  const startRecordingCycle = async () => {
+    cleanupStreamAndAudio();
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -77,55 +108,90 @@ export default function VoiceButton({
 
       recorder.onstop = handleRecordingStop;
       
-      recorder.start(100); // Record in 100ms slices
+      recorder.start(100);
       mediaRecorderRef.current = recorder;
       onChangeState('recording');
 
-      // Auto stop after 30 seconds
-      timeoutRef.current = setTimeout(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-          stopRecording();
+      // Setup Web Audio API for Silence/Speech Detection
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const audioContext = new AudioContextClass();
+      audioContextRef.current = audioContext;
+      
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      let lastSpeechTime = Date.now();
+      let hasSpoken = false;
+      const silenceThreshold = 7; // Average frequency amplitude above this means speaking
+      const silenceDuration = 1800; // 1.8 seconds of silence to ensure user finished speaking
+
+      const checkVolume = () => {
+        if (!recorder || recorder.state !== 'recording') return;
+        
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
         }
-      }, 30000);
+        const averageVolume = sum / bufferLength;
+        
+        const now = Date.now();
+        if (averageVolume > silenceThreshold) {
+          hasSpoken = true;
+          lastSpeechTime = now;
+        }
+        
+        // If the user spoke, and now there has been silence for 1.8 seconds, trigger auto-stop!
+        if (hasSpoken && (now - lastSpeechTime > silenceDuration)) {
+          if (recorder.state === 'recording') {
+            recorder.stop();
+          }
+        }
+      };
+
+      // Check volume level every 100ms
+      volumeCheckIntervalRef.current = setInterval(checkVolume, 100);
 
     } catch (err: any) {
       console.error('Microphone access error:', err);
       onError('Bé cần cho phép KAI dùng microphone mới nói chuyện được nhé! 🎤');
+      setIsVoiceModeActive(false);
       onChangeState('idle');
     }
   };
 
-  const stopRecording = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-
-    // Add 400ms grace period to capture trailing speech and prevent truncation
-    setTimeout(() => {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop();
-      }
-    }, 400);
-  };
-
   const handleRecordingStop = async () => {
-    onChangeState('processing');
-    
-    // Stop all media tracks to release microphone lock
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
+    // If voice mode was turned off during recording, discard the clip
+    if (!isVoiceModeActiveRef.current) {
+      cleanupStreamAndAudio();
+      onChangeState('idle');
+      return;
     }
+
+    onChangeState('processing');
+    cleanupStreamAndAudio();
 
     const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
     const extension = mimeType.includes('ogg') ? 'ogg' : 'webm';
     const blob = new Blob(chunksRef.current, { type: mimeType });
     
-    if (blob.size < 1000) {
-      // Audio is too short or empty
-      onError('Kai nghe không rõ bạn hãy nói lại');
-      onChangeState('idle');
+    if (blob.size < 1200) {
+      // Audio is too short
+      onError('KAI nghe không rõ, bé hãy nói lại nhé! 🐻');
+      // Auto-restart listening if mode is still active
+      if (isVoiceModeActiveRef.current) {
+        silenceTimeoutRef.current = setTimeout(() => {
+          if (isVoiceModeActiveRef.current) startRecordingCycle();
+        }, 2000);
+      } else {
+        onChangeState('idle');
+      }
       return;
     }
 
@@ -143,26 +209,61 @@ export default function VoiceButton({
       const { text } = await res.json();
       
       if (!text || text.trim() === '') {
-        onError('Kai nghe không rõ bạn hãy nói lại');
-        onChangeState('idle');
+        onError('KAI nghe không rõ, bé hãy nói lại nhé! 🐻');
+        if (isVoiceModeActiveRef.current) {
+          silenceTimeoutRef.current = setTimeout(() => {
+            if (isVoiceModeActiveRef.current) startRecordingCycle();
+          }, 2000);
+        } else {
+          onChangeState('idle');
+        }
         return;
       }
 
-      onTranscript(text); // Display user's bubble
-      await onResponse(text); // Fetch AI response + play TTS
+      onTranscript(text);
+      await onResponse(text); // Fetch AI response (this changes state to processing/playing)
 
     } catch (err) {
       console.error('Voice processing pipeline error:', err);
-      onError('Kai nghe không rõ bạn hãy nói lại');
-      onChangeState('idle');
+      onError('KAI nghe không rõ, bé hãy nói lại nhé! 🐻');
+      if (isVoiceModeActiveRef.current) {
+        silenceTimeoutRef.current = setTimeout(() => {
+          if (isVoiceModeActiveRef.current) startRecordingCycle();
+        }, 2000);
+      } else {
+        onChangeState('idle');
+      }
+    }
+  };
+
+  const handleToggleVoiceMode = () => {
+    if (isVoiceModeActive) {
+      setIsVoiceModeActive(false);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      } else {
+        cleanupStreamAndAudio();
+        onChangeState('idle');
+      }
+    } else {
+      setIsVoiceModeActive(true);
     }
   };
 
   // Render button content according to state
   const renderIcon = () => {
+    if (!isVoiceModeActive) {
+      return <Mic className="w-8 h-8 text-white" />;
+    }
+
     switch (state) {
       case 'recording':
-        return <Square className="w-8 h-8 text-white fill-white scale-110" />;
+        return (
+          <div className="relative flex items-center justify-center">
+            <div className="absolute w-12 h-12 rounded-full bg-rose-500/30 animate-ping" />
+            <Mic className="w-8 h-8 text-white animate-pulse" />
+          </div>
+        );
       case 'processing':
         return <Loader2 className="w-8 h-8 text-white animate-spin" />;
       case 'playing':
@@ -181,25 +282,34 @@ export default function VoiceButton({
     }
   };
 
+  const buttonClass = isVoiceModeActive
+    ? state === 'recording'
+      ? 'bg-rose-500 hover:bg-rose-600 scale-105 shadow-rose-200'
+      : state === 'processing'
+      ? 'bg-amber-500'
+      : state === 'playing'
+      ? 'bg-emerald-500'
+      : 'bg-purple-500'
+    : 'bg-[#6C63FF] hover:bg-[#5b52ee]';
+
   return (
     <div className="flex flex-col items-center">
       <button
-        onPointerDown={startRecording}
-        onPointerUp={stopRecording}
-        // Handle pointer leaves button to prevent sticky recording
-        onPointerLeave={stopRecording}
-        className={`voice-btn voice-btn--${state} ${size === 'lg' ? 'w-[88px] h-[88px]' : 'w-[72px] h-[72px]'}`}
-        style={size === 'lg' ? { width: '88px', height: '88px' } : undefined}
-        aria-label="Nhấn giữ để nói với KAI"
+        onClick={handleToggleVoiceMode}
+        className={`voice-btn flex items-center justify-center rounded-full text-white shadow-lg transition-all duration-300 transform active:scale-90 hover:scale-[1.03] ${buttonClass} ${
+          size === 'lg' ? 'w-[84px] h-[84px]' : 'w-[72px] h-[72px]'
+        }`}
+        aria-label="Bấm để nói chuyện với KAI"
       >
         {renderIcon()}
       </button>
       
-      <span className="text-xs font-bold text-slate-400 mt-2">
-        {state === 'idle' && 'Nhấn giữ để nói'}
-        {state === 'recording' && 'Đang nghe bé nói...'}
-        {state === 'processing' && 'KAI đang nghĩ...'}
-        {state === 'playing' && 'KAI đang nói...'}
+      <span className="text-xs font-black text-slate-400 mt-2 transition-all duration-300">
+        {!isVoiceModeActive && 'Bấm để bắt đầu nói'}
+        {isVoiceModeActive && state === 'recording' && 'Đang nghe bé nói...'}
+        {isVoiceModeActive && state === 'processing' && 'KAI đang nghĩ...'}
+        {isVoiceModeActive && state === 'playing' && 'KAI đang trả lời...'}
+        {isVoiceModeActive && state === 'idle' && 'Chuẩn bị nghe bé...'}
       </span>
     </div>
   );
