@@ -9,7 +9,7 @@ import { parseAIResponse } from '@/lib/exerciseParser';
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, sessionId, grade, subject, studentId, studentName } =
+    const { messages, sessionId, grade, subject, studentId, studentName, textbookSet } =
       await request.json();
 
     const lastUserMessage = messages[messages.length - 1]?.content || '';
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     let content = '';
     let tokensUsed = 0;
 
-    const systemPrompt = buildContextualPrompt(grade, subject, studentName);
+    const systemPrompt = buildContextualPrompt(grade, subject, studentName, textbookSet);
 
     if (hasGroqKey()) {
       try {
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Parse and validate exercise if present
-    const { caption, exercise } = parseAIResponse(content);
+    const { caption, exercise, illustration, lessonComplete } = parseAIResponse(content);
     let finalExercise = null;
     if (exercise && validateExercise(exercise, grade, subject)) {
       finalExercise = exercise;
@@ -137,7 +137,13 @@ export async function POST(request: NextRequest) {
     // Log feature event
     await logFeatureEvent(studentId, 'ai_response', { subject, grade, tokens: tokensUsed });
 
-    return NextResponse.json({ content: caption, exercise: finalExercise, flagged: false });
+    return NextResponse.json({ 
+      content: caption, 
+      exercise: finalExercise, 
+      illustration, 
+      lessonComplete, 
+      flagged: false 
+    });
   } catch (error) {
     console.error('Chat error:', error);
     return NextResponse.json({ error: 'Lỗi server' }, { status: 500 });

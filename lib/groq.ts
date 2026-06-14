@@ -50,6 +50,35 @@ const MOCK_RESPONSES: Record<string, string[]> = {
 export function getMockChatResponse(message: string, subject: string, grade: number, studentName = 'bé'): string {
   const msg = message.toLowerCase();
   
+  // Custom response logic for lesson auto-start and progress
+  if (msg.includes('tự động bắt đầu bài học') || msg.includes('bài học mới') || msg.includes('hệ thống — tự động bắt đầu bài học') || msg.includes('hệ thống — tiếp tục bài học')) {
+    if (subject === 'math') {
+      return `Chào bé! Hôm nay chúng mình học Bài 1: Ôn tập các số đến 1000 nhé! Bé có 3 hộp bút, mỗi hộp có 100 cái bút — bé có bao nhiêu cái bút tất cả? 🤔\n<illustration>{"type":"place_value_blocks","value":300,"label":"Số 300 gồm 3 trăm"}</illustration>\n<exercise>{"type":"number_input","question":"3 hộp × 100 = ?","correctAnswer":300,"visualHint":"3 × 100 = ?"}</exercise>`;
+    } else if (subject === 'english') {
+      return `Hello! Hôm nay chúng mình học bài Chào hỏi - Hello & Goodbye nhé. Hãy tập nói theo KAI nào! 👋\n<illustration>{"type":"emoji_dialogue","lines":[{"speaker":"kai","text_en":"Hello!","text_vi":"Xin chào!"},{"speaker":"student","text_en":"Hi! How are you?","text_vi":"Chào! Bạn khỏe không?"}]}</illustration>\n<exercise>{"type":"multiple_choice","question":"Khi gặp ai đó, câu chào nào phổ biến nhất?","options":["Goodbye","Hello","Thank you","Please"],"correctIndex":1,"emoji":"👋"}</exercise>`;
+    }
+  }
+
+  if (msg.includes('kết quả bài tập') && msg.includes('đúng')) {
+    if (subject === 'math') {
+      if (message.includes('place_value_blocks') || message.includes('number_input')) {
+        return `Đúng rồi! Bé giỏi quá! 🌟 Giờ mình học cách SO SÁNH 2 số nha — số nào 'to' hơn? ✨\n<illustration>{"type":"number_comparison","valueA":156,"valueB":203,"labelA":"Số thứ nhất","labelB":"Số thứ hai"}</illustration>\n<exercise>{"type":"number_input","question":"Số nào lớn hơn: 156 hay 203?","correctAnswer":203,"visualHint":"So sánh hàng trăm trước nhé!"}</exercise>`;
+      } else {
+        return `Tuyệt vời! Bé đã hoàn thành xuất sắc bài học hôm nay rồi! 🎉 Bé đã nắm vững kiến thức ôn tập các số đến 1000 rồi đấy.\n<lesson_complete>{"lessonId":"math-g3-l01"}</lesson_complete>`;
+      }
+    } else if (subject === 'english') {
+      if (message.includes('multiple_choice') || message.includes('emoji_dialogue')) {
+        return `Great job! Bé phát âm rất chuẩn đấy. Giờ mình học cách hỏi thăm sức khỏe nha! ✨\n<illustration>{"type":"emoji_dialogue","lines":[{"speaker":"kai","text_en":"How are you?","text_vi":"Bạn khỏe không?"},{"speaker":"student","text_en":"I am fine, thank you!","text_vi":"Mình khỏe, cảm ơn bạn!"}]}</illustration>\n<exercise>{"type":"multiple_choice","question":"Để trả lời cho câu hỏi 'How are you?', bé dùng câu nào?","options":["Hello","I am fine, thank you","Goodbye","Bye"],"correctIndex":1,"emoji":"💖"}</exercise>`;
+      } else {
+        return `Excellent! Bé đã hoàn thành xuất sắc bài học chào hỏi hôm nay rồi! 🎉\n<lesson_complete>{"lessonId":"eng-g3-l01"}</lesson_complete>`;
+      }
+    }
+  }
+
+  if (msg.includes('kết quả bài tập') && msg.includes('sai')) {
+    return `Gần đúng rồi! Bé đừng buồn nha. Thử làm lại câu này dễ hơn nhé! 🌟\n<exercise>{"type":"true_false","statement":"Số 234 có chữ số hàng trăm là 2 đúng hay sai?","correctAnswer":true}</exercise>`;
+  }
+
   // Custom response logic for practice mode triggers
   if (msg.includes('bài tập 1') || msg.includes('multiple_choice') || msg.includes('trắc nghiệm')) {
     return `KAI có bài tập trắc nghiệm thú vị cho bé đây! 🌟\n<exercise>\n{"type":"multiple_choice","question":"Hình nào có 3 cạnh và 3 góc hả bé?","options":["Hình vuông","Hình tròn","Hình tam giác","Hình chữ nhật"],"correctIndex":2,"emoji":"📐"}\n</exercise>`;

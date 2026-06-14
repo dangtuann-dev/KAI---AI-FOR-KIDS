@@ -18,6 +18,13 @@ import { Exercise, ExerciseResult } from '@/lib/exerciseTypes';
 import { ExerciseRenderer } from '@/components/exercises/ExerciseRenderer';
 import { ExerciseFeedback } from '@/components/exercises/ExerciseFeedback';
 
+// Onboarding & Lesson Mode Imports
+import { TextbookSelector } from '@/components/onboarding/TextbookSelector';
+import { IllustrationRenderer } from '@/components/illustrations/IllustrationRenderer';
+import { LessonCompleteActions } from '@/components/workspace/LessonCompleteActions';
+import { LESSON_PLANS, getNextLesson, getLessonByOrder, Lesson } from '@/lib/lessonPlans';
+import { Illustration } from '@/lib/exerciseParser';
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -61,6 +68,10 @@ export default function LearnPage() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackIsCorrect, setFeedbackIsCorrect] = useState(false);
   const [lastResult, setLastResult] = useState<ExerciseResult | null>(null);
+  
+  // Illustration and Lesson Complete states
+  const [activeIllustration, setActiveIllustration] = useState<Illustration | null>(null);
+  const [activeLessonComplete, setActiveLessonComplete] = useState<any>(null);
   
   const currentAudioRef = useRef<HTMLAudioElement | SpeechSynthesisUtterance | null>(null);
   const isMountedRef = useRef(true);
@@ -195,7 +206,7 @@ export default function LearnPage() {
 
   // Create new session whenever student, grade or subject changes
   useEffect(() => {
-    if (!student) return;
+    if (!student || studentProfile?.onboarding_completed === false) return;
 
     let active = true;
 
@@ -204,6 +215,9 @@ export default function LearnPage() {
     setActiveCaption(null);
     setCharacterState('idle');
     setVoiceState('idle');
+    setActiveIllustration(null);
+    setActiveExercise(null);
+    setActiveLessonComplete(null);
 
     async function initSession() {
       setIsTyping(true);
@@ -241,46 +255,189 @@ export default function LearnPage() {
 
         setSessionId(newSession.id);
 
-        // Create initial greetings message based on subject
-        const greetingTexts: Record<string, string> = {
-          math: `Chào Bé ${studentProfile?.full_name || ''}! Hôm nay chúng mình sẽ cùng học Toán lớp ${selectedGrade} nhé. Bé đang gặp khó khăn ở bài toán nào thế? 🔢`,
-          vietnamese: `KAI chào bé! Chúng mình cùng học Tiếng Việt lớp ${selectedGrade} nhé. Bé muốn tập đọc, tập viết hay làm văn cùng KAI? 📖`,
-          science: `Chào bé yêu khoa học! Hôm nay KAI sẽ giải đáp cho bé các câu hỏi kỳ thú về tự nhiên lớp ${selectedGrade}. Bé tò mò về điều gì nào? 🔬`,
-          english: `Hello friend! Cùng KAI luyện nói Tiếng Anh nhé. Bé muốn học từ vựng về chủ đề gì ngày hôm nay nào? 🔤`,
-          ethics: `KAI chào bé ngoan! Hôm nay chúng mình cùng học Đạo đức lớp ${selectedGrade} và trò chuyện về những thói quen tốt nhé. 🤝`,
-          history: `Chào bé! Hôm nay chúng mình sẽ du hành lịch sử và địa lý lớp ${selectedGrade} cùng KAI nhé. Bé muốn khám phá vùng đất nào? 🌍`,
-        };
+        // Check if we have lesson plans for this subject & grade
+        const lessons = LESSON_PLANS[selectedSubject]?.[selectedGrade] || [];
+        const hasLessonPlans = lessons.length > 0;
 
-        const initialGreeting = greetingTexts[selectedSubject] || `Chào Bé! KAI sẵn sàng giúp bé ôn bài rồi. Hôm nay bé muốn hỏi gì KAI? 🌟`;
+        let currentLesson = null;
+        let currentConceptIndex = 0;
+        let isNewLesson = false;
+        let completedLessonIds: string[] = [];
 
-        // Save greeting to DB
-        await supabase.from('chat_messages').insert({
-          session_id: newSession.id,
-          student_id: student.id,
-          role: 'assistant',
-          content: initialGreeting,
-          is_voice: false
-        });
+        if (hasLessonPlans) {
+          // Query progress from database
+          const { data: progressData } = await supabase
+            .from('lesson_progress')
+            .select('*')
+            .eq('student_id', student.id)
+            .eq('subject', selectedSubject)
+            .single();
 
-        if (!active) return;
+          if (progressData) {
+            completedLessonIds = progressData.completed_lesson_ids || [];
+            if (progressData.current_lesson_id) {
+              currentLesson = lessons.find(l => l.id === progressData.current_lesson_id) || null;
+              currentConceptIndex = progressData.current_concept_index ?? 0;
+            }
 
-        // Set messages list
-        const initialMsg = {
-          id: 'greeting',
-          role: 'assistant' as const,
-          content: initialGreeting,
-          is_voice: false
-        };
-        
-        setMessages([initialMsg]);
-        setMascotText(`Học môn ${
-          selectedSubject === 'math' ? 'Toán' : 
-          selectedSubject === 'vietnamese' ? 'Tiếng Việt' : 
-          selectedSubject === 'science' ? 'Khoa học' : 'học tập'
-        } lớp ${selectedGrade} thôi!`);
+            // If current lesson is null or already completed, get the next one
+            if (!currentLesson || completedLessonIds.includes(currentLesson.id)) {
+              currentLesson = getNextLesson(selectedSubject, selectedGrade, completedLessonIds);
+              currentConceptIndex = 0;
+              isNewLesson = true;
 
-        // Automatically read aloud the greeting
-        playTTS(initialGreeting);
+              if (currentLesson) {
+                await supabase
+                  .from('lesson_progress')
+                  .update({
+                    current_lesson_id: currentLesson.id,
+                    current_concept_index: 0,
+                    last_session_at: new Date().toISOString()
+                  })
+                  .eq('id', progressData.id);
+              }
+            }
+          } else {
+            // First time learning this subject: start Lesson 1
+            currentLesson = getLessonByOrder(selectedSubject, selectedGrade, 1);
+            currentConceptIndex = 0;
+            isNewLesson = true;
+
+            if (currentLesson) {
+              await supabase
+                .from('lesson_progress')
+                .insert({
+                  student_id: student.id,
+                  subject: selectedSubject,
+                  grade: selectedGrade,
+                  current_lesson_id: currentLesson.id,
+                  current_concept_index: 0,
+                  completed_lesson_ids: []
+                });
+            }
+          }
+        }
+
+        if (currentLesson) {
+          const concept = currentLesson.concepts[currentConceptIndex];
+          const textbookName = studentProfile?.textbook_set || 'unknown';
+          const textbookHint = (currentLesson.textbookHints as any)?.[textbookName] || currentLesson.title;
+
+          const systemTrigger = `[HỆ THỐNG — TỰ ĐỘNG BẮT ĐẦU BÀI HỌC]
+Bé vừa mở môn ${selectedSubject === 'math' ? 'Toán' : 'Tiếng Anh'}, lớp ${selectedGrade}. Đây là bài học ${isNewLesson ? 'MỚI' : 'đang học dở'}.
+Bài học: "${currentLesson.title}" (Trong SGK của bé gọi là: "${textbookHint}")
+Khái niệm cần dạy ngay bây giờ: "${concept.title}"
+Gợi ý cách dạy: ${concept.teachingHint}
+
+Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHONG CÁCH GIẢNG DẠY (xem LESSON_TEACHING_PROMPT). Nhớ chèn minh họa và 1 bài tập thực hành ngay sau khi giải thích — KHÔNG chờ bé yêu cầu.`;
+
+          // Save trigger message to DB
+          await supabase.from('chat_messages').insert({
+            session_id: newSession.id,
+            student_id: student.id,
+            role: 'user',
+            content: systemTrigger,
+            is_system_context: true
+          });
+
+          if (!active) return;
+
+          const userMsg = {
+            id: `sys-${Date.now()}`,
+            role: 'user' as const,
+            content: systemTrigger,
+            is_voice: false
+          };
+
+          setMessages([userMsg]);
+          setMascotText(currentLesson.title);
+
+          // Call API
+          const payload = {
+            messages: [userMsg],
+            sessionId: newSession.id,
+            grade: selectedGrade,
+            subject: selectedSubject,
+            studentId: student.id,
+            studentName: studentProfile?.full_name || 'bé',
+            textbookSet: studentProfile?.textbook_set
+          };
+
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!res.ok) throw new Error('API failed');
+          const data = await res.json();
+
+          if (!active) return;
+
+          const aiMsg = {
+            id: `ai-${Date.now()}`,
+            role: 'assistant' as const,
+            content: data.content,
+            is_voice: false
+          };
+
+          setMessages((prev) => [...prev, aiMsg]);
+
+          await playTTS(data.content, () => {
+            if (data.illustration) {
+              setActiveIllustration(data.illustration);
+            }
+            if (data.exercise) {
+              setActiveExercise(data.exercise);
+            }
+            if (data.lessonComplete) {
+              setActiveLessonComplete(data.lessonComplete);
+              handleLessonCompleteDBUpdate(data.lessonComplete.lessonId);
+            }
+          });
+
+        } else {
+          // Create initial greetings message based on subject
+          const greetingTexts: Record<string, string> = {
+            math: `Chào Bé ${studentProfile?.full_name || ''}! Hôm nay chúng mình sẽ cùng học Toán lớp ${selectedGrade} nhé. Bé đang gặp khó khăn ở bài toán nào thế? 🔢`,
+            vietnamese: `KAI chào bé! Chúng mình cùng học Tiếng Việt lớp ${selectedGrade} nhé. Bé muốn tập đọc, tập viết hay làm văn cùng KAI? 📖`,
+            science: `Chào bé yêu khoa học! Hôm nay KAI sẽ giải đáp cho bé các câu hỏi kỳ thú về tự nhiên lớp ${selectedGrade}. Bé tò mò về điều gì nào? 🔬`,
+            english: `Hello friend! Cùng KAI luyện nói Tiếng Anh nhé. Bé muốn học từ vựng về chủ đề gì ngày hôm nay nào? 🔤`,
+            ethics: `KAI chào bé ngoan! Hôm nay chúng mình cùng học Đạo đức lớp ${selectedGrade} và trò chuyện về những thói quen tốt nhé. 🤝`,
+            history: `Chào bé! Hôm nay chúng mình sẽ du hành lịch sử và địa lý lớp ${selectedGrade} cùng KAI nhé. Bé muốn khám phá vùng đất nào? 🌍`,
+          };
+
+          const initialGreeting = greetingTexts[selectedSubject] || `Chào Bé! KAI sẵn sàng giúp bé ôn bài rồi. Hôm nay bé muốn hỏi gì KAI? 🌟`;
+
+          // Save greeting to DB
+          await supabase.from('chat_messages').insert({
+            session_id: newSession.id,
+            student_id: student.id,
+            role: 'assistant',
+            content: initialGreeting,
+            is_voice: false
+          });
+
+          if (!active) return;
+
+          // Set messages list
+          const initialMsg = {
+            id: 'greeting',
+            role: 'assistant' as const,
+            content: initialGreeting,
+            is_voice: false
+          };
+          
+          setMessages([initialMsg]);
+          setMascotText(`Học môn ${
+            selectedSubject === 'math' ? 'Toán' : 
+            selectedSubject === 'vietnamese' ? 'Tiếng Việt' : 
+            selectedSubject === 'science' ? 'Khoa học' : 'học tập'
+          } lớp ${selectedGrade} thôi!`);
+
+          // Automatically read aloud the greeting
+          playTTS(initialGreeting);
+        }
       } catch (err) {
         console.error('Session init error:', err);
         if (active) {
@@ -299,7 +456,7 @@ export default function LearnPage() {
       active = false;
       stopAllSpeech();
     };
-  }, [student, selectedSubject, selectedGrade]);
+  }, [student, selectedSubject, selectedGrade, studentProfile?.onboarding_completed]);
 
   // Helper to detect correct or incorrect answers for mascot state
   const detectEncouragement = (text: string): 'happy' | 'encourage' | null => {
@@ -313,7 +470,7 @@ export default function LearnPage() {
   };
 
   // Handle playing TTS text and syncing mascot speaking state
-  const playTTS = async (text: string) => {
+  const playTTS = async (text: string, onComplete?: () => void) => {
     // Stop any current audio immediately
     if (currentAudioRef.current) {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -339,10 +496,12 @@ export default function LearnPage() {
             setTimeout(() => {
               setCharacterState('idle');
               setActiveCaption(null);
+              if (onComplete) onComplete();
             }, 2000);
           } else {
             setCharacterState('idle');
             setActiveCaption(null);
+            if (onComplete) onComplete();
           }
           setVoiceState('idle');
           setCurrentAudio(null);
@@ -360,7 +519,145 @@ export default function LearnPage() {
       setVoiceState('idle');
       setCharacterState('idle');
       setActiveCaption(null);
+      if (onComplete) onComplete();
     }
+  };
+
+  // Handle textbook selection during onboarding
+  const handleSelectTextbook = async (textbookId: 'ket_noi_tri_thuc' | 'chan_troi_sang_tao' | 'canh_dieu' | 'unknown') => {
+    if (!student) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('student_profiles')
+      .update({
+        textbook_set: textbookId,
+        onboarding_completed: true
+      })
+      .eq('id', student.id);
+
+    if (error) {
+      showToast('Có lỗi xảy ra, bé hãy thử lại nhé!', 'error');
+      return;
+    }
+
+    setStudentProfile((prev: any) => ({
+      ...prev,
+      textbook_set: textbookId,
+      onboarding_completed: true
+    }));
+
+    // Play a happy greeting
+    setCharacterState('happy');
+    const textbookNameLabel = 
+      textbookId === 'ket_noi_tri_thuc' ? 'Kết nối tri thức với cuộc sống' :
+      textbookId === 'chan_troi_sang_tao' ? 'Chân trời sáng tạo' :
+      textbookId === 'canh_dieu' ? 'Cánh Diều' : 'chung';
+
+    const greetingText = `Tuyệt vời! Vậy KAI sẽ dạy bé theo sách ${textbookNameLabel} nhé! 🎉 Mình bắt đầu bài học đầu tiên luôn nha!`;
+    await playTTS(greetingText);
+  };
+
+  // Play onboarding greeting once when it loads
+  useEffect(() => {
+    if (studentProfile && studentProfile.onboarding_completed === false) {
+      const onboardText = "Chào bé! KAI là bạn học của bé đây! Trước khi bắt đầu, bé cho KAI biết ở lớp, cô giáo dạy bé theo sách nào nhé? 📚";
+      playTTS(onboardText);
+    }
+  }, [studentProfile?.id, studentProfile?.onboarding_completed]);
+
+  const handleLessonCompleteDBUpdate = async (lessonId: string) => {
+    const supabase = createClient();
+    const { data: progressData } = await supabase
+      .from('lesson_progress')
+      .select('*')
+      .eq('student_id', student.id)
+      .eq('subject', selectedSubject)
+      .single();
+
+    if (progressData) {
+      const completedList = progressData.completed_lesson_ids || [];
+      if (!completedList.includes(lessonId)) {
+        completedList.push(lessonId);
+      }
+
+      await supabase
+        .from('lesson_progress')
+        .update({
+          completed_lesson_ids: completedList,
+          current_lesson_id: null,
+          current_concept_index: 0,
+          last_session_at: new Date().toISOString()
+        })
+        .eq('id', progressData.id);
+    }
+  };
+
+  const handleContinueNewLesson = async () => {
+    setActiveLessonComplete(null);
+    setActiveIllustration(null);
+    setActiveExercise(null);
+
+    // Get next lesson
+    const lessons = LESSON_PLANS[selectedSubject]?.[selectedGrade] || [];
+    const supabase = createClient();
+    const { data: progressData } = await supabase
+      .from('lesson_progress')
+      .select('*')
+      .eq('student_id', student.id)
+      .eq('subject', selectedSubject)
+      .single();
+
+    if (progressData) {
+      const completedList = progressData.completed_lesson_ids || [];
+      const nextL = getNextLesson(selectedSubject, selectedGrade, completedList);
+
+      if (nextL) {
+        // Update lesson_progress to new lesson
+        await supabase
+          .from('lesson_progress')
+          .update({
+            current_lesson_id: nextL.id,
+            current_concept_index: 0,
+            last_session_at: new Date().toISOString()
+          })
+          .eq('id', progressData.id);
+
+        // Send system message to trigger new lesson!
+        const textbookName = studentProfile?.textbook_set || 'unknown';
+        const textbookHint = (nextL.textbookHints as any)?.[textbookName] || nextL.title;
+        const concept = nextL.concepts[0];
+
+        const systemTrigger = `[HỆ THỐNG — TỰ ĐỘNG BẮT ĐẦU BÀI HỌC]
+Bé vừa mở môn ${selectedSubject === 'math' ? 'Toán' : 'Tiếng Anh'}, lớp ${selectedGrade}. Đây là bài học MỚI.
+Bài học: "${nextL.title}" (Trong SGK của bé gọi là: "${textbookHint}")
+Khái niệm cần dạy ngay bây giờ: "${concept.title}"
+Gợi ý cách dạy: ${concept.teachingHint}
+
+Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHONG CÁCH GIẢNG DẠY (xem LESSON_TEACHING_PROMPT). Nhớ chèn minh họa và 1 bài tập thực hành ngay sau khi giải thích — KHÔNG chờ bé yêu cầu.`;
+
+        const userMsg = {
+          id: `sys-${Date.now()}`,
+          role: 'user' as const,
+          content: systemTrigger
+        };
+        setMessages((prev) => [...prev, userMsg]);
+        await getAIResponse(systemTrigger, false);
+      } else {
+        // No more lessons available
+        showToast('Bé đã hoàn thành tất cả bài học của môn này rồi! 🎉', 'success');
+        const endText = `Ồ! Bé đã học hết các bài học ${selectedSubject === 'math' ? 'Toán' : 'Tiếng Anh'} của lớp ${selectedGrade} cùng KAI rồi đó! Bé giỏi quá, KAI rất tự hào về bé! 💖`;
+        await playTTS(endText);
+      }
+    }
+  };
+
+  const handleStopLearning = async () => {
+    setActiveLessonComplete(null);
+    setActiveIllustration(null);
+    setActiveExercise(null);
+
+    const goodbyeText = 'Hôm nay bé học giỏi lắm! Nghỉ ngơi thôi nào, hẹn gặp lại bé vào buổi học tiếp theo nhé! Bye bye! 👋';
+    await playTTS(goodbyeText);
   };
 
   const handleLogout = async () => {
@@ -430,6 +727,7 @@ export default function LearnPage() {
         subject: selectedSubject,
         studentId: student.id,
         studentName: studentProfile?.full_name || 'bé',
+        textbookSet: studentProfile?.textbook_set
       };
 
       const res = await fetch('/api/chat', {
@@ -466,12 +764,23 @@ export default function LearnPage() {
 
       setMessages((prev) => [...prev, aiMsg]);
       
-      // Read response aloud
-      await playTTS(data.content);
+      // Reset active illustrations/exercises/complete before starting play
+      setActiveIllustration(null);
+      setActiveLessonComplete(null);
 
-      if (data.exercise) {
-        setActiveExercise(data.exercise);
-      }
+      // Read response aloud, then show components
+      await playTTS(data.content, () => {
+        if (data.illustration) {
+          setActiveIllustration(data.illustration);
+        }
+        if (data.exercise) {
+          setActiveExercise(data.exercise);
+        }
+        if (data.lessonComplete) {
+          setActiveLessonComplete(data.lessonComplete);
+          handleLessonCompleteDBUpdate(data.lessonComplete.lessonId);
+        }
+      });
 
     } catch (err) {
       console.error(err);
@@ -518,6 +827,43 @@ export default function LearnPage() {
     setCharacterState('idle');
 
     if (!lastResult) return;
+
+    // Increment concept index if there's a lesson and user answered correctly
+    const lessons = LESSON_PLANS[selectedSubject]?.[selectedGrade] || [];
+    const hasLessonPlans = lessons.length > 0;
+
+    if (hasLessonPlans && lastResult.isCorrect) {
+      const supabase = createClient();
+      const { data: progressData } = await supabase
+        .from('lesson_progress')
+        .select('*')
+        .eq('student_id', student.id)
+        .eq('subject', selectedSubject)
+        .single();
+
+      if (progressData && progressData.current_lesson_id) {
+        const currentLesson = lessons.find(l => l.id === progressData.current_lesson_id);
+        if (currentLesson) {
+          const nextIndex = (progressData.current_concept_index || 0) + 1;
+          if (nextIndex < currentLesson.concepts.length) {
+            await supabase
+              .from('lesson_progress')
+              .update({
+                current_concept_index: nextIndex,
+                last_session_at: new Date().toISOString()
+              })
+              .eq('id', progressData.id);
+          } else {
+            await supabase
+              .from('lesson_progress')
+              .update({
+                last_session_at: new Date().toISOString()
+              })
+              .eq('id', progressData.id);
+          }
+        }
+      }
+    }
 
     const resultText = lastResult.isCorrect 
       ? `[KẾT QUẢ BÀI TẬP — không hiển thị cho bé] Bé đã trả lời ĐÚNG bài tập loại ${lastResult.exercise.type}. KAI hãy khen ngợi bé thật nồng nhiệt và chuyển sang bài học tiếp theo!` 
@@ -688,7 +1034,30 @@ export default function LearnPage() {
         {/* KAI Character & Subtitles Stage */}
         <div className="flex-1 flex flex-col justify-center items-center p-4 min-h-0 relative w-full">
           
-          {activeExercise ? (
+          {studentProfile && studentProfile.onboarding_completed === false ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-6 w-full max-w-4xl py-6 min-h-0 relative">
+              {/* Mascot Video Call frame but centered */}
+              <div className="w-full max-w-sm aspect-square bg-gradient-to-b from-slate-900 to-slate-950 rounded-[32px] border-4 border-slate-800 shadow-xl relative overflow-hidden flex flex-col items-center justify-center p-4 shrink-0">
+                <div className="flex-1 flex items-center justify-center min-h-0 w-full relative z-10 scale-90">
+                  <KaiCharacter state={characterState} audioElement={currentAudio} />
+                </div>
+              </div>
+
+              {/* Subtitle Caption */}
+              <div className="w-full max-w-[720px] min-h-[48px] flex items-center justify-center py-2 shrink-0">
+                <CaptionBar
+                  speaker="kai"
+                  text={activeCaption?.text || "Chào bé! KAI là bạn học của bé đây! Trước khi bắt đầu, bé cho KAI biết ở lớp, cô giáo dạy bé theo sách nào nhé? 📚"}
+                  isActive={true}
+                />
+              </div>
+
+              {/* Textbook Selector */}
+              <div className="w-full max-w-md animate-fade-in">
+                <TextbookSelector onSelect={handleSelectTextbook} />
+              </div>
+            </div>
+          ) : activeLessonComplete || activeExercise || activeIllustration ? (
             /* Split layout on desktop, floating bubble layout on mobile */
             <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-8 w-full max-w-5xl my-2 min-h-0">
               
@@ -709,20 +1078,40 @@ export default function LearnPage() {
                 </div>
               </div>
 
-              {/* Exercise Box */}
-              <div className="flex-1 w-full max-w-md flex items-center justify-center z-30 min-h-0 relative">
-                <ExerciseRenderer
-                  exercise={activeExercise}
-                  onComplete={handleExerciseComplete}
-                />
-                
-                {/* Feedback overlay */}
-                {showFeedback && (
-                  <ExerciseFeedback
-                    isCorrect={feedbackIsCorrect}
-                    onCharacterState={setCharacterState}
-                    onDone={handleFeedbackDone}
-                  />
+              {/* Side Panel: Lesson complete / Illustration / Exercise */}
+              <div className="flex-1 w-full max-w-md flex flex-col gap-4 items-center justify-center z-30 min-h-0 relative overflow-y-auto custom-scrollbar">
+                {activeLessonComplete ? (
+                  <div className="w-full animate-fade-in">
+                    <LessonCompleteActions 
+                      onContinue={handleContinueNewLesson} 
+                      onStop={handleStopLearning} 
+                    />
+                  </div>
+                ) : (
+                  <>
+                    {activeIllustration && (
+                      <div className="w-full animate-fade-in">
+                        <IllustrationRenderer data={activeIllustration} />
+                      </div>
+                    )}
+                    {activeExercise && (
+                      <div className="w-full">
+                        <ExerciseRenderer
+                          exercise={activeExercise}
+                          onComplete={handleExerciseComplete}
+                        />
+                        
+                        {/* Feedback overlay */}
+                        {showFeedback && (
+                          <ExerciseFeedback
+                            isCorrect={feedbackIsCorrect}
+                            onCharacterState={setCharacterState}
+                            onDone={handleFeedbackDone}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

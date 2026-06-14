@@ -36,7 +36,9 @@
       "total_sessions": 5,
       "total_minutes": 45,
       "streak_days": 3,
-      "last_active_at": "2026-06-11T00:00:00.000Z"
+      "last_active_at": "2026-06-11T00:00:00.000Z",
+      "textbook_set": null,
+      "onboarding_completed": false
     }
   ],
   "parent_children": [

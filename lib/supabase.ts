@@ -62,7 +62,9 @@ const initialMockDb = {
       total_sessions: 5,
       total_minutes: 45,
       streak_days: 3,
-      last_active_at: new Date().toISOString()
+      last_active_at: new Date().toISOString(),
+      textbook_set: null,
+      onboarding_completed: false
     }
   ],
   parent_children: [
@@ -146,6 +148,7 @@ const initialMockDb = {
     max_session_minutes: 60
   },
   exercise_attempts: [],
+  lesson_progress: [],
   credentials: [
     { email: 'tuan@kai.com', password: 'tuan1234', id: 'mock-admin-uuid' },
     { email: 'minh@kai.com', password: 'minh1234', id: 'mock-student-uuid' },
