@@ -27,7 +27,30 @@ export async function POST(request: NextRequest) {
           prompt: 'KAI ơi, toán học, tiếng việt, một cộng một bằng mấy, chào bạn gấu KAI, giúp em giải bài này, chữ này viết sao, học tập, khoa học',
         });
 
-        return NextResponse.json({ text: transcription });
+        let text = (transcription as any) || '';
+        if (typeof text !== 'string') {
+          text = (text as any).text || '';
+        }
+
+        const lowerText = text.toLowerCase().trim();
+        const hallucinations = [
+          'la la school',
+          'subscribe',
+          'đăng ký kênh',
+          'chia sẻ video',
+          'cảm ơn các bạn đã xem',
+          'cảm ơn đã xem',
+          'thank you for watching',
+          'vietsub',
+          'phụ đề bởi'
+        ];
+
+        const isHallucination = hallucinations.some(h => lowerText.includes(h));
+        if (isHallucination) {
+          text = '';
+        }
+
+        return NextResponse.json({ text });
       } catch (err) {
         console.error('Groq transcribe error, falling back to mock:', err);
         // Fallback to mock text if API fails
