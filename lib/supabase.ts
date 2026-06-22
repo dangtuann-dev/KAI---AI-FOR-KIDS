@@ -64,7 +64,13 @@ const initialMockDb = {
       streak_days: 3,
       last_active_at: new Date().toISOString(),
       textbook_set: null,
-      onboarding_completed: false
+      onboarding_completed: false,
+      character_id: 'giong',
+      character_nickname: 'Gióng',
+      character_color_variant: 'primary',
+      character_xp: 0,
+      character_level: 1,
+      character_evolution_stage: 0
     }
   ],
   parent_children: [
@@ -149,6 +155,35 @@ const initialMockDb = {
   },
   exercise_attempts: [],
   lesson_progress: [],
+  parent_tasks: [
+    {
+      id: "task-1",
+      student_id: "mock-student-uuid",
+      title: "Quét nhà giúp ông bà",
+      xp_reward: 50,
+      status: "completed",
+      verified_at: "2026-06-22T05:00:00.000Z",
+      created_at: "2026-06-22T01:00:00.000Z"
+    },
+    {
+      id: "task-2",
+      student_id: "mock-student-uuid",
+      title: "Đọc sách Tiếng Việt 20 phút",
+      xp_reward: 100,
+      status: "pending",
+      verified_at: null,
+      created_at: "2026-06-22T02:00:00.000Z"
+    },
+    {
+      id: "task-3",
+      student_id: "mock-student-uuid",
+      title: "Hoàn thành bài tập tự luận Toán ở trường",
+      xp_reward: 150,
+      status: "pending",
+      verified_at: null,
+      created_at: "2026-06-22T03:00:00.000Z"
+    }
+  ],
   credentials: [
     { email: 'tuan@kai.com', password: 'tuan1234', id: 'mock-admin-uuid' },
     { email: 'minh@kai.com', password: 'minh1234', id: 'mock-student-uuid' },
@@ -398,7 +433,13 @@ class MockAuth {
         total_sessions: 0,
         total_minutes: 0,
         streak_days: 0,
-        last_active_at: new Date().toISOString()
+        last_active_at: new Date().toISOString(),
+        character_id: 'giong',
+        character_nickname: 'Gióng',
+        character_color_variant: 'primary',
+        character_xp: 0,
+        character_level: 1,
+        character_evolution_stage: 0
       });
     }
 
@@ -486,7 +527,13 @@ class MockAuth {
           total_sessions: 0,
           total_minutes: 0,
           streak_days: 0,
-          last_active_at: new Date().toISOString()
+          last_active_at: new Date().toISOString(),
+          character_id: 'giong',
+          character_nickname: 'Gióng',
+          character_color_variant: 'primary',
+          character_xp: 0,
+          character_level: 1,
+          character_evolution_stage: 0
         });
       }
 

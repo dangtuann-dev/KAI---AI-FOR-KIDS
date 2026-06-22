@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import LearningReport from '@/components/parent/LearningReport';
 import ChatHistoryViewer from '@/components/parent/ChatHistoryViewer';
+import RealWorldTasks from '@/components/parent/RealWorldTasks';
 import { UserPlus, UserMinus, Sparkles, Users, AlertTriangle, AlertCircle } from 'lucide-react';
 
 export default function ParentDashboard() {
@@ -375,13 +376,22 @@ export default function ParentDashboard() {
       {/* Right Column: Chat History Viewer or Empty State */}
       <div className="w-full md:col-span-7 lg:col-span-7 flex flex-col gap-6">
         {selectedChildId ? (
-          /* 2. Detailed chat histories viewing */
-          <div className="p-4 bg-white border border-slate-100 rounded-3xl shadow-sm">
-            <ChatHistoryViewer
-              sessions={chatSessions}
-              onFetchSessionMessages={handleFetchMessages}
+          <>
+            {/* Real-World Tasks verification & delegation widget */}
+            <RealWorldTasks
+              studentId={selectedChildId}
+              studentName={selectedChild?.full_name || 'Học sinh'}
+              onXpUpdated={() => fetchChildren(parent.id)}
             />
-          </div>
+
+            {/* 2. Detailed chat histories viewing */}
+            <div className="p-4 bg-white border border-slate-100 rounded-3xl shadow-sm">
+              <ChatHistoryViewer
+                sessions={chatSessions}
+                onFetchSessionMessages={handleFetchMessages}
+              />
+            </div>
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center p-8 bg-white border border-slate-100 rounded-3xl shadow-sm text-center text-slate-400 py-16 gap-3">
             <Sparkles className="w-8 h-8 text-rose-300" />

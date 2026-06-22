@@ -27,11 +27,12 @@ export interface TTSResult {
 /**
  * Chuyển văn bản thành audio bằng giọng KAI (hoạt hình, nam, thanh thoát).
  */
-export async function synthesizeKaiVoice(text: string): Promise<TTSResult> {
+export async function synthesizeKaiVoice(text: string, voiceCode?: string): Promise<TTSResult> {
   // Loại bỏ emoji trước khi đưa vào TTS — Edge TTS có thể đọc nhịu/lỗi với emoji
   const cleanText = stripEmojis(text);
+  const selectedVoice = voiceCode || KAI_VOICE;
 
-  const tts = new EdgeTTS(cleanText, KAI_VOICE, CARTOON_VOICE_OPTIONS);
+  const tts = new EdgeTTS(cleanText, selectedVoice, CARTOON_VOICE_OPTIONS);
   const result = await tts.synthesize();
 
   const audioBuffer = Buffer.from(await result.audio.arrayBuffer());

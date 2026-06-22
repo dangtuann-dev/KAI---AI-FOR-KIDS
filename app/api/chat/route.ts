@@ -39,7 +39,26 @@ export async function POST(request: NextRequest) {
     let content = '';
     let tokensUsed = 0;
 
-    const systemPrompt = buildContextualPrompt(grade, subject, studentName, textbookSet);
+    const supabase = createClient();
+    
+    // Fetch student profile to get character details
+    const { data: stdProfile } = await supabase
+      .from('student_profiles')
+      .select('character_id, character_nickname')
+      .eq('id', studentId)
+      .single();
+
+    const characterId = stdProfile?.character_id || 'giong';
+    const characterNickname = stdProfile?.character_nickname || 'Gióng';
+
+    const { CHARACTER_ROSTER } = require('@/lib/characters');
+    const char = CHARACTER_ROSTER.find((c: any) => c.id === characterId) || CHARACTER_ROSTER[0];
+    const activeCharacter = {
+      ...char,
+      nickname: characterNickname || char.nickname
+    };
+
+    const systemPrompt = buildContextualPrompt(grade, subject, studentName, textbookSet, activeCharacter);
 
     if (hasGroqKey()) {
       try {
@@ -73,7 +92,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Log user message to DB first (if it wasn't logged on frontend)
-    const supabase = createClient();
     
     // Check if the user message exists already in DB, otherwise insert it
     const { data: existingMsg } = await supabase
@@ -85,7 +103,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!existingMsg || existingMsg.length === 0) {
-      const isSystemContext = lastUserMessage.startsWith('[KẾT QUẢ BÀI TẬP');
+      const isSystemContext = lastUserMessage.startsWith('[');
       await supabase.from('chat_messages').insert({
         session_id: sessionId,
         student_id: studentId,

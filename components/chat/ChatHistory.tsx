@@ -39,12 +39,14 @@ export default function ChatHistory({
     scrollToBottom();
   }, [messages, isTyping]);
 
+  const displayMessages = messages.filter((msg) => !msg.content?.startsWith('['));
+
   return (
     <div
       ref={containerRef}
       className="chat-container custom-scrollbar"
     >
-      {messages.length === 0 ? (
+      {displayMessages.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-slate-400 p-8 text-center">
           <p className="font-display font-semibold text-lg text-slate-500 mb-1">
             Chào mừng bé đến với KAI! 🐻
@@ -54,7 +56,7 @@ export default function ChatHistory({
           </p>
         </div>
       ) : (
-        messages.map((msg) => (
+        displayMessages.map((msg) => (
           <ChatBubble
             key={msg.id}
             message={msg}

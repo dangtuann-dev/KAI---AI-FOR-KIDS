@@ -12,6 +12,8 @@ import { CategorizeExercise } from './CategorizeExercise';
 import { MatchPairsExercise } from './MatchPairsExercise';
 import { LabelDiagramExercise } from './LabelDiagramExercise';
 
+import { validateExerciseAnswer } from '@/lib/exerciseValidator';
+
 interface Props {
   exercise: Exercise;
   onComplete: (result: ExerciseResult) => void;
@@ -20,7 +22,8 @@ interface Props {
 export function ExerciseRenderer({ exercise, onComplete }: Props) {
   const startTime = useRef(Date.now());
 
-  const handleAnswer = (studentAnswer: unknown, isCorrect: boolean) => {
+  const handleAnswer = (studentAnswer: unknown, _componentIsCorrect: boolean) => {
+    const { isCorrect } = validateExerciseAnswer(exercise, studentAnswer);
     onComplete({
       exercise,
       studentAnswer,

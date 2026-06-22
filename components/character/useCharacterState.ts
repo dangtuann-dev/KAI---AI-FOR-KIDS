@@ -2,7 +2,19 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-export type CharacterState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'happy' | 'encourage';
+export type CharacterState = 
+  | 'idle' 
+  | 'listening' 
+  | 'thinking' 
+  | 'speaking' 
+  | 'happy' 
+  | 'encourage'
+  | 'walking'
+  | 'sleeping'
+  | 'dancing'
+  | 'celebrating'
+  | 'curious'
+  | 'reading';
 
 export function useCharacterState(state: CharacterState) {
   const [blinkState, setBlinkState] = useState(false);
@@ -10,10 +22,14 @@ export function useCharacterState(state: CharacterState) {
   const [armState, setArmState] = useState<'idle' | 'thinking' | 'speaking' | 'happy'>('idle');
   const [eyeState, setEyeState] = useState<'normal' | 'wide' | 'happy' | 'thinking'>('normal');
 
-  // Random blink behavior - only when idle/listening (no blinking during speaking for a cleaner look)
+  // Random blink behavior - only when idle/listening/curious/walking
   useEffect(() => {
     if (state === 'speaking') {
       setBlinkState(false);
+      return;
+    }
+    if (state === 'sleeping') {
+      setBlinkState(true); // Eyes closed while sleeping
       return;
     }
     
@@ -54,6 +70,8 @@ export function useCharacterState(state: CharacterState) {
         setArmState('speaking');
         break;
       case 'happy':
+      case 'dancing':
+      case 'celebrating':
         setEarState('perked');
         setEyeState('happy');
         setArmState('happy');
@@ -63,6 +81,22 @@ export function useCharacterState(state: CharacterState) {
         setEyeState('happy');
         setArmState('idle');
         break;
+      case 'curious':
+        setEarState('perked');
+        setEyeState('wide');
+        setArmState('idle');
+        break;
+      case 'reading':
+        setEarState('normal');
+        setEyeState('thinking');
+        setArmState('thinking');
+        break;
+      case 'sleeping':
+        setEarState('normal');
+        setEyeState('thinking');
+        setArmState('idle');
+        break;
+      case 'walking':
       case 'idle':
       default:
         setEarState('normal');

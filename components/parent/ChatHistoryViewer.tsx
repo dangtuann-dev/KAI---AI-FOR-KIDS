@@ -107,38 +107,40 @@ export default function ChatHistoryViewer({
               <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-xs font-bold font-display">Đang tải lịch sử...</span>
             </div>
-          ) : sessionMessages.length === 0 ? (
+          ) : sessionMessages.filter((msg) => !msg.content?.startsWith('[')).length === 0 ? (
             <div className="text-center py-12 text-slate-400 text-xs font-bold">
               Không có tin nhắn nào trong phiên học này.
             </div>
           ) : (
-            sessionMessages.map((msg) => {
-              const isUser = msg.role === 'user';
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[90%] ${isUser ? 'self-end' : 'self-start'}`}
-                >
-                  <span className="text-[10px] font-bold text-slate-400 mb-1 px-1">
-                    {isUser ? 'Con' : 'KAI'} {isUser && msg.is_voice && '🎤'}
-                  </span>
-                  
+            sessionMessages
+              .filter((msg) => !msg.content?.startsWith('['))
+              .map((msg) => {
+                const isUser = msg.role === 'user';
+                return (
                   <div
-                    className={`p-3 rounded-2xl text-sm leading-relaxed ${
-                      isUser
-                        ? 'bg-purple-500 text-white rounded-br-none'
-                        : 'bg-white text-slate-700 border border-slate-100 rounded-bl-none shadow-sm'
-                    }`}
+                    key={msg.id}
+                    className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[90%] ${isUser ? 'self-end' : 'self-start'}`}
                   >
-                    {msg.content}
+                    <span className="text-[10px] font-bold text-slate-400 mb-1 px-1">
+                      {isUser ? 'Con' : 'KAI'} {isUser && msg.is_voice && '🎤'}
+                    </span>
+                    
+                    <div
+                      className={`p-3 rounded-2xl text-sm leading-relaxed ${
+                        isUser
+                          ? 'bg-purple-500 text-white rounded-br-none'
+                          : 'bg-white text-slate-700 border border-slate-100 rounded-bl-none shadow-sm'
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                    
+                    <span className="text-[8px] text-slate-300 mt-0.5 px-1">
+                      {new Date(msg.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
-                  
-                  <span className="text-[8px] text-slate-300 mt-0.5 px-1">
-                    {new Date(msg.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              );
-            })
+                );
+              })
           )}
         </div>
       </div>

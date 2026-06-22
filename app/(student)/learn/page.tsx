@@ -12,6 +12,8 @@ import OwlAvatar from '@/components/chat/OwlAvatar';
 import VoiceButton, { VoiceState } from '@/components/voice/VoiceButton';
 import { speakText, stopAllSpeech } from '@/lib/tts-client';
 import KaiCharacter from '@/components/character/KaiCharacter';
+import { CharacterState } from '@/components/character/useCharacterState';
+import { useAmbientBehavior } from '@/components/character/useAmbientBehavior';
 import CaptionBar from '@/components/workspace/CaptionBar';
 import ChatLogDrawer from '@/components/workspace/ChatLogDrawer';
 import { Exercise, ExerciseResult } from '@/lib/exerciseTypes';
@@ -20,6 +22,7 @@ import { ExerciseFeedback } from '@/components/exercises/ExerciseFeedback';
 
 // Onboarding & Lesson Mode Imports
 import { TextbookSelector } from '@/components/onboarding/TextbookSelector';
+import { CharacterSelector } from '@/components/onboarding/CharacterSelector';
 import { IllustrationRenderer } from '@/components/illustrations/IllustrationRenderer';
 import { LessonCompleteActions } from '@/components/workspace/LessonCompleteActions';
 import { LESSON_PLANS, getNextLesson, getLessonByOrder, Lesson } from '@/lib/lessonPlans';
@@ -52,7 +55,7 @@ export default function LearnPage() {
   const [mascotText, setMascotText] = useState('Đang khởi động KAI...');
   
   // Character & Subtitle States
-  const [characterState, setCharacterState] = useState<'idle' | 'listening' | 'thinking' | 'speaking' | 'happy' | 'encourage'>('idle');
+  const [characterState, setCharacterState] = useState<CharacterState>('idle');
   const [activeCaption, setActiveCaption] = useState<{ speaker: 'user' | 'kai'; text: string } | null>(null);
   const [chatLogOpen, setChatLogOpen] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
@@ -72,6 +75,20 @@ export default function LearnPage() {
   // Illustration and Lesson Complete states
   const [activeIllustration, setActiveIllustration] = useState<Illustration | null>(null);
   const [activeLessonComplete, setActiveLessonComplete] = useState<any>(null);
+
+  // Onboarding States
+  const [onboardingStage, setOnboardingStage] = useState<'character' | 'textbook'>('character');
+  const [onboardingCharacterId, setOnboardingCharacterId] = useState('giong');
+  const [onboardingNickname, setOnboardingNickname] = useState('Gióng');
+
+  // Register life-like idle behaviors hook
+  useAmbientBehavior({
+    voiceState,
+    characterState,
+    setCharacterState,
+    messagesCount: messages.length,
+    textInput,
+  });
   
   const currentAudioRef = useRef<HTMLAudioElement | SpeechSynthesisUtterance | null>(null);
   const isMountedRef = useRef(true);
@@ -523,6 +540,16 @@ Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHO
     }
   };
 
+  const handleSelectCharacter = (characterId: string, charNickname: string) => {
+    setOnboardingCharacterId(characterId);
+    setOnboardingNickname(charNickname);
+    setOnboardingStage('textbook');
+    
+    // Play transition greeting
+    const transText = `Thật tuyệt vời! Mình sẽ là bạn đồng hành cùng bé với tên gọi là ${charNickname}. Tiếp theo, bé cho mình biết ở lớp cô giáo dạy bé theo bộ sách nào nhé! 📚`;
+    playTTS(transText);
+  };
+
   // Handle textbook selection during onboarding
   const handleSelectTextbook = async (textbookId: 'ket_noi_tri_thuc' | 'chan_troi_sang_tao' | 'canh_dieu' | 'unknown') => {
     if (!student) return;
@@ -531,7 +558,13 @@ Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHO
       .from('student_profiles')
       .update({
         textbook_set: textbookId,
-        onboarding_completed: true
+        onboarding_completed: true,
+        character_id: onboardingCharacterId,
+        character_nickname: onboardingNickname,
+        character_color_variant: 'primary',
+        character_xp: 0,
+        character_level: 1,
+        character_evolution_stage: 0
       })
       .eq('id', student.id);
 
@@ -543,7 +576,13 @@ Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHO
     setStudentProfile((prev: any) => ({
       ...prev,
       textbook_set: textbookId,
-      onboarding_completed: true
+      onboarding_completed: true,
+      character_id: onboardingCharacterId,
+      character_nickname: onboardingNickname,
+      character_color_variant: 'primary',
+      character_xp: 0,
+      character_level: 1,
+      character_evolution_stage: 0
     }));
 
     // Play a happy greeting
@@ -553,14 +592,14 @@ Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHO
       textbookId === 'chan_troi_sang_tao' ? 'Chân trời sáng tạo' :
       textbookId === 'canh_dieu' ? 'Cánh Diều' : 'chung';
 
-    const greetingText = `Tuyệt vời! Vậy KAI sẽ dạy bé theo sách ${textbookNameLabel} nhé! 🎉 Mình bắt đầu bài học đầu tiên luôn nha!`;
+    const greetingText = `Tuyệt vời! Vậy ${onboardingNickname} sẽ dạy bé theo sách ${textbookNameLabel} nhé! 🎉 Mình bắt đầu bài học đầu tiên luôn nha!`;
     await playTTS(greetingText);
   };
 
   // Play onboarding greeting once when it loads
   useEffect(() => {
     if (studentProfile && studentProfile.onboarding_completed === false) {
-      const onboardText = "Chào bé! KAI là bạn học của bé đây! Trước khi bắt đầu, bé cho KAI biết ở lớp, cô giáo dạy bé theo sách nào nhé? 📚";
+      const onboardText = "Ngày xửa ngày xưa, có 8 linh thú từ truyền thuyết Việt Nam đang tìm kiếm một người bạn học dũng cảm để cùng lớn lên đó bé ơi! Bé hãy đánh thức quả trứng để xem ai nhé! ✨";
       playTTS(onboardText);
     }
   }, [studentProfile?.id, studentProfile?.onboarding_completed]);
@@ -802,7 +841,7 @@ Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHO
     setLastResult(result);
 
     try {
-      await fetch('/api/exercise-attempt', {
+      const res = await fetch('/api/exercise-attempt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -816,6 +855,31 @@ Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHO
           time_spent_ms: result.timeSpentMs,
         }),
       });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.xpEarned > 0) {
+          showToast(`+${data.xpEarned} XP! Bé làm rất tốt! 🎉`, 'success');
+          
+          setStudentProfile((prev: any) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              character_xp: data.xpTotal,
+              character_level: data.level,
+              character_evolution_stage: data.evolutionStage,
+            };
+          });
+
+          if (data.leveledUp) {
+            showToast(`LÊN CẤP! Bé đạt Cấp ${data.level}! 🏆`, 'success');
+            setCharacterState('celebrating');
+            setTimeout(() => {
+              setCharacterState('idle');
+            }, 3500);
+          }
+        }
+      }
     } catch (dbErr) {
       console.error('Failed to log exercise attempt:', dbErr);
     }
@@ -950,6 +1014,11 @@ Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHO
           <ProgressBadge
             streakDays={studentProfile?.streak_days || 0}
             totalSessions={studentProfile?.total_sessions || 0}
+            xp={studentProfile?.character_xp || 0}
+            level={studentProfile?.character_level || 1}
+            evolutionStage={studentProfile?.character_evolution_stage || 0}
+            characterId={studentProfile?.character_id || 'giong'}
+            characterNickname={studentProfile?.character_nickname || studentProfile?.full_name || 'Bé'}
           />
           
           <button
@@ -1028,6 +1097,11 @@ Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHO
           <ProgressBadge
             streakDays={studentProfile?.streak_days || 0}
             totalSessions={studentProfile?.total_sessions || 0}
+            xp={studentProfile?.character_xp || 0}
+            level={studentProfile?.character_level || 1}
+            evolutionStage={studentProfile?.character_evolution_stage || 0}
+            characterId={studentProfile?.character_id || 'giong'}
+            characterNickname={studentProfile?.character_nickname || studentProfile?.full_name || 'Bé'}
           />
         </div>
 
@@ -1035,28 +1109,34 @@ Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHO
         <div className="flex-1 flex flex-col justify-center items-center p-4 min-h-0 relative w-full">
           
           {studentProfile && studentProfile.onboarding_completed === false ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-6 w-full max-w-4xl py-6 min-h-0 relative">
-              {/* Mascot Video Call frame but centered */}
-              <div className="w-full max-w-sm aspect-square bg-gradient-to-b from-slate-900 to-slate-950 rounded-[32px] border-4 border-slate-800 shadow-xl relative overflow-hidden flex flex-col items-center justify-center p-4 shrink-0">
-                <div className="flex-1 flex items-center justify-center min-h-0 w-full relative z-10 scale-90">
-                  <KaiCharacter state={characterState} audioElement={currentAudio} />
+            onboardingStage === 'character' ? (
+              <div className="w-full max-w-2xl animate-fade-in my-auto">
+                <CharacterSelector onSelect={handleSelectCharacter} />
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center gap-6 w-full max-w-4xl py-6 min-h-0 relative">
+                {/* Mascot Video Call frame but centered */}
+                <div className="w-full max-w-sm aspect-square bg-gradient-to-b from-slate-900 to-slate-950 rounded-[32px] border-4 border-slate-800 shadow-xl relative overflow-hidden flex flex-col items-center justify-center p-4 shrink-0">
+                  <div className="flex-1 flex items-center justify-center min-h-0 w-full relative z-10 scale-90">
+                    <KaiCharacter state={characterState} audioElement={currentAudio} characterId={onboardingCharacterId} />
+                  </div>
+                </div>
+
+                {/* Subtitle Caption */}
+                <div className="w-full max-w-[720px] min-h-[48px] flex items-center justify-center py-2 shrink-0">
+                  <CaptionBar
+                    speaker="kai"
+                    text={activeCaption?.text || `Chào bé! Mình là ${onboardingNickname} đây! Trước khi bắt đầu, bé cho mình biết ở lớp cô giáo dạy bé theo sách nào nhé? 📚`}
+                    isActive={true}
+                  />
+                </div>
+
+                {/* Textbook Selector */}
+                <div className="w-full max-w-md animate-fade-in">
+                  <TextbookSelector onSelect={handleSelectTextbook} />
                 </div>
               </div>
-
-              {/* Subtitle Caption */}
-              <div className="w-full max-w-[720px] min-h-[48px] flex items-center justify-center py-2 shrink-0">
-                <CaptionBar
-                  speaker="kai"
-                  text={activeCaption?.text || "Chào bé! KAI là bạn học của bé đây! Trước khi bắt đầu, bé cho KAI biết ở lớp, cô giáo dạy bé theo sách nào nhé? 📚"}
-                  isActive={true}
-                />
-              </div>
-
-              {/* Textbook Selector */}
-              <div className="w-full max-w-md animate-fade-in">
-                <TextbookSelector onSelect={handleSelectTextbook} />
-              </div>
-            </div>
+            )
           ) : activeLessonComplete || activeExercise || activeIllustration ? (
             /* Split layout on desktop, floating bubble layout on mobile */
             <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-8 w-full max-w-5xl my-2 min-h-0">
@@ -1074,7 +1154,7 @@ Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHO
                   </div>
                 )}
                 <div className="flex-1 flex items-center justify-center min-h-0 w-full relative z-10 scale-90">
-                  <KaiCharacter state={characterState} audioElement={currentAudio} />
+                  <KaiCharacter state={characterState} audioElement={currentAudio} characterId={studentProfile?.character_id} />
                 </div>
               </div>
 
@@ -1134,7 +1214,7 @@ Hãy CHỦ ĐỘNG chào bé và bắt đầu giảng khái niệm này theo PHO
 
               {/* Mascot Stage */}
               <div className="flex-1 flex items-center justify-center min-h-0 w-full relative z-10">
-                <KaiCharacter state={characterState} audioElement={currentAudio} />
+                <KaiCharacter state={characterState} audioElement={currentAudio} characterId={studentProfile?.character_id} />
               </div>
 
               {/* Subject/Topic water-mark on bottom corner of video feed */}

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Search, Filter, Edit2, Check, X, ShieldAlert, GraduationCap } from 'lucide-react';
 
 interface StudentInfo {
@@ -223,9 +224,12 @@ export default function UserTable({ users, onUpdateUser }: UserTableProps) {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         {/* Avatar */}
-                        <img
+                        <Image
                           src={user.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.id}`}
                           alt={user.full_name}
+                          width={40}
+                          height={40}
+                          unoptimized
                           className="w-10 h-10 rounded-full border border-purple-100 bg-purple-50 shrink-0"
                         />
                         
@@ -364,9 +368,12 @@ export default function UserTable({ users, onUpdateUser }: UserTableProps) {
                 return (
                   <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="py-3 pl-2 flex items-center gap-3">
-                      <img
+                      <Image
                         src={user.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.id}`}
                         alt={user.full_name}
+                        width={32}
+                        height={32}
+                        unoptimized
                         className="w-8 h-8 rounded-full border border-purple-100 bg-purple-50 shrink-0"
                       />
                       <span className="font-extrabold text-slate-800 font-display text-sm">
